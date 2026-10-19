@@ -75,9 +75,70 @@
         },
         "icon": "bot"
       }
+    ],
+    "shortcuts": [
+      {
+        "keys": [
+          "F"
+        ],
+        "label": {
+          "de": "Fokus auf den gewählten Knoten",
+          "en": "Focus on the selected node"
+        }
+      },
+      {
+        "keys": [
+          "Esc"
+        ],
+        "label": {
+          "de": "Zurück zum Gesamtbild",
+          "en": "Back to the whole graph"
+        }
+      },
+      {
+        "keys": [
+          "+",
+          "−"
+        ],
+        "label": {
+          "de": "Hinein- / herauszoomen",
+          "en": "Zoom in / out"
+        }
+      },
+      {
+        "keys": [
+          "←",
+          "→",
+          "↑",
+          "↓"
+        ],
+        "label": {
+          "de": "Graph verschieben",
+          "en": "Pan the graph"
+        }
+      },
+      {
+        "keys": [
+          "0"
+        ],
+        "label": {
+          "de": "Ansicht zurücksetzen",
+          "en": "Reset the view"
+        }
+      },
+      {
+        "keys": [
+          "Strg",
+          "Enter"
+        ],
+        "label": {
+          "de": "Frage stellen",
+          "en": "Ask the question"
+        }
+      }
     ]
   },
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": "Hostwerk",
   "homepage": "https://github.com/Passimoritz/hostwerk-ext-knowledge-graph",
   "license": "MIT",

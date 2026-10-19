@@ -1,3 +1,7 @@
+## 1.2.1
+
+- Keyboard shortcuts appear in Hostwerk's shortcut overview (F1 or ?) while the graph is open. / Tastenkürzel in Hostwerks Übersicht.
+
 ## 1.2.0
 
 - Focus view: show only the neighbourhood of one class, function or file (1–3 steps, rings by distance) – also for nodes the overview leaves out in large projects. Double-click a node, press F or use the Focus button; Esc returns to the whole graph. Search finds nodes outside the drawn graph and focuses them. / Fokus-Ansicht.
