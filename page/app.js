@@ -88,6 +88,8 @@ async function renderGraph() {
       <input class="input" id="find" placeholder="${t('findPlaceholder')}" aria-label="${t('findPlaceholder')}" style="max-width:260px">
       <select class="select" id="group" style="width:auto;max-width:260px" aria-label="${t('group')}"><option value="">${t('allGroups')}</option>${v.communities.filter((c) => c.size >= 3).map((c) => html`<option value="${c.id}" ${String(c.id) === String(group) ? raw('selected') : ''}>${c.label} (${c.size})</option>`)}</select>
       <div class="seg" role="group" aria-label="${t('viewMode')}"><button class="${listMode ? '' : 'active'}" id="m-map">${t('map')}</button><button class="${listMode ? 'active' : ''}" id="m-list">${t('list')}</button></div>
+      <select class="select" id="precise" style="width:auto" aria-label="${t('readMode')}" title="${t('readModeHint')}">${['auto', 'on', 'off'].map((m) => html`<option value="${m}" ${(v.preciseMode || 'auto') === m ? raw('selected') : ''}>${t('read_' + m)}</option>`)}</select>
+      ${v.precise ? html`<span class="badge ok" title="${t('preciseHint')}">${t('precise')}</span>` : ''}
       <span class="small muted right">${t('stats', { nodes: Hostwerk.fmt.number(v.total.nodes), edges: Hostwerk.fmt.number(v.total.edges), groups: v.communities.length, mod: v.modularity })}</span>
     </div>
     <div class="kg-wrap">
@@ -98,6 +100,7 @@ async function renderGraph() {
   $('group').onchange = (e) => { group = e.target.value; focus = null; view = null; sel = null; renderGraph(); };
   if ($('unfocus')) $('unfocus').onclick = () => setFocus(null);
   for (const b of document.querySelectorAll('[data-hops]')) b.onclick = () => setFocus(focus.id, Number(b.dataset.hops));
+  $('precise').onchange = async (e) => { try { await Hostwerk.put(`/knowledge/${enc(s.id)}/options`, { precise: e.target.value }); Hostwerk.toast(t('readModeSaved'), { kind: 'success' }); build(true); } catch (er) { fail(er); } };
   $('m-map').onclick = () => { listMode = false; renderGraph(); };
   $('m-list').onclick = () => { listMode = true; renderGraph(); };
   const find = $('find');

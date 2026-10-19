@@ -158,5 +158,13 @@
   "kind_file": "Dateien",
   "kind_doc": "Doku",
   "kind_table": "Tabellen",
-  "kind_note": "Notizen"
+  "kind_note": "Notizen",
+  "readMode": "Auslesen",
+  "readModeHint": "Wie genau Hostwerk den Code liest. Automatisch = ab 600 Code-Dateien genau (tree-sitter), sonst schnell.",
+  "read_auto": "Auslesen: automatisch",
+  "read_on": "Auslesen: genau",
+  "read_off": "Auslesen: schnell",
+  "precise": "genau",
+  "preciseHint": "Mit tree-sitter gelesen: Definitionen und Aufrufe aus dem echten Syntaxbaum.",
+  "readModeSaved": "Gespeichert – der Graph wird neu gebaut"
 }
