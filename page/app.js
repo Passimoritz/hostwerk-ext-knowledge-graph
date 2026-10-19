@@ -12,6 +12,7 @@ let pos = null;     // Layout
 let sel = null;     // gewählter Knoten
 let group = '';     // Gruppenfilter
 let listMode = false;
+let focus = null;   // { id, hops } – Fokus-Ansicht: nur die Nachbarschaft eines Knotens
 let building = false;
 const cam = { x: 0, y: 0, z: 1 };
 
@@ -37,7 +38,7 @@ function renderHead() {
     ${s ? html`<span class="small muted">${s.built ? t('builtAgo', { when: KG.ago(s.builtAt, lang()) }) : t('notBuilt')}</span>
       <div class="right row-tight">${st.paused ? html`<span class="badge warn">${t('paused')}</span>` : ''}<button class="btn sm ${s.built ? 'ghost' : 'primary'}" id="build" ${building ? raw('disabled') : ''}>${building ? t('building') : s.built ? t('update') : t('build')}</button></div>` : ''}`);
   const pick = $('pick');
-  if (pick) pick.onchange = () => { cur = pick.value; sel = null; view = null; Hostwerk.storage.set('project', cur).catch(() => {}); renderHead(); show(tab); };
+  if (pick) pick.onchange = () => { cur = pick.value; sel = null; view = null; focus = null; Hostwerk.storage.set('project', cur).catch(() => {}); renderHead(); show(tab); };
   $('addFolder').onclick = addFolder;
   if ($('build')) $('build').onclick = () => build(false);
 }
@@ -71,9 +72,18 @@ async function renderGraph() {
   const s = src();
   if (!s) { Hostwerk.render('#graph', html`<div class="card"><div class="empty"><h3>${t('noProjects')}</h3><p>${t('noProjectsText')}</p><div class="empty-action"><button class="btn primary" id="e-add">${t('addFolder')}</button></div></div></div>`); $('e-add').onclick = addFolder; return; }
   if (!s.built) { Hostwerk.render('#graph', html`<div class="card"><div class="empty"><h3>${t('emptyTitle')}</h3><p>${t('emptyText')}</p><div class="empty-action"><button class="btn primary" id="e-build">${t('build')}</button></div></div></div>`); $('e-build').onclick = () => build(false); return; }
-  if (!view) { view = await Hostwerk.get(`/knowledge/${enc(s.id)}/graph?limit=700${group !== '' ? `&community=${enc(group)}` : ''}`); pos = KG.layout(view.nodes, view.edges); }
+  if (!view) {
+    try { view = await Hostwerk.get(focus ? `/knowledge/${enc(s.id)}/graph?focus=${enc(focus.id)}&hops=${focus.hops}` : `/knowledge/${enc(s.id)}/graph?limit=700${group !== '' ? `&community=${enc(group)}` : ''}`); } catch (e) { if (!focus) throw e; focus = null; fail(e); return renderGraph(); }
+    pos = view.focus ? KG.radial(view.nodes, view.focus.dist) : KG.layout(view.nodes, view.edges);
+    if (view.focus) { cam.x = 0; cam.y = 0; cam.z = 1; sel = view.focus.id; }
+  }
   const v = view;
   Hostwerk.render('#graph', html`
+    ${v.focus ? html`<div class="kg-focusbar" role="status">
+      <span class="badge accent">${t('focus')}</span><b class="ellipsis" style="min-width:0">${v.focus.label}</b>
+      <div class="seg" role="group" aria-label="${t('focusSteps')}">${[1, 2, 3].map((h) => html`<button class="${v.focus.hops === h ? 'active' : ''}" data-hops="${h}" aria-pressed="${v.focus.hops === h}">${t('step' + h)}</button>`)}</div>
+      <span class="small muted">${t('focusCount', { n: v.nodes.length })}${v.focus.cut ? ` · ${t('focusCut')}` : ''}</span>
+      <button class="btn sm ghost right" id="unfocus">${t('focusOff')}</button></div>` : ''}
     <div class="row" style="margin-bottom:10px;flex-wrap:wrap">
       <input class="input" id="find" placeholder="${t('findPlaceholder')}" aria-label="${t('findPlaceholder')}" style="max-width:260px">
       <select class="select" id="group" style="width:auto;max-width:260px" aria-label="${t('group')}"><option value="">${t('allGroups')}</option>${v.communities.filter((c) => c.size >= 3).map((c) => html`<option value="${c.id}" ${String(c.id) === String(group) ? raw('selected') : ''}>${c.label} (${c.size})</option>`)}</select>
@@ -85,11 +95,20 @@ async function renderGraph() {
         <div class="kg-legend small muted">${v.communities.slice(0, 8).map((c) => html`<span><i class="kg-dot" style="${`background:${KG.color(c.id)}`}"></i>${c.label}</span>`)}</div>`}</div>
       <div class="card card-pad stack" id="side"></div>
     </div>`);
-  $('group').onchange = (e) => { group = e.target.value; view = null; sel = null; renderGraph(); };
+  $('group').onchange = (e) => { group = e.target.value; focus = null; view = null; sel = null; renderGraph(); };
+  if ($('unfocus')) $('unfocus').onclick = () => setFocus(null);
+  for (const b of document.querySelectorAll('[data-hops]')) b.onclick = () => setFocus(focus.id, Number(b.dataset.hops));
   $('m-map').onclick = () => { listMode = false; renderGraph(); };
   $('m-list').onclick = () => { listMode = true; renderGraph(); };
   const find = $('find');
-  find.onkeydown = (e) => { if (e.key === 'Enter') { const hit = KG.search(v.nodes, find.value, 1)[0]; if (hit) select(hit.id, true); else Hostwerk.toast(t('notFound'), { kind: 'warn' }); } };
+  find.onkeydown = async (e) => {
+    if (e.key !== 'Enter') return;
+    const hit = KG.search(v.nodes, find.value, 1)[0];
+    if (hit) return select(hit.id, true);
+    // Nicht unter den gezeichneten Knoten (großes Projekt)? Den Graphen fragen und auf den Treffer fokussieren.
+    try { const r = await Hostwerk.post(`/knowledge/${enc(s.id)}/query`, { question: find.value, maxNodes: 10 }); if (r.seeds && r.seeds[0]) return setFocus(r.seeds[0].id, 1); } catch { /* egal */ }
+    Hostwerk.toast(t('notFound'), { kind: 'warn' });
+  };
   if (listMode) renderList(); else drawSetup();
   renderSide();
 }
@@ -112,11 +131,18 @@ async function renderSide() {
   try {
     const r = await Hostwerk.post(`/knowledge/${enc(cur)}/explain`, { name: n.id });
     Hostwerk.render(side, html`${md(r.text)}
-      <div class="row-tight" style="flex-wrap:wrap"><button class="btn sm" id="s-ask">${t('askAbout')}</button><button class="btn sm ghost" id="s-from">${t('pathFrom')}</button><button class="btn sm ghost" id="s-close">${t('close')}</button></div>`);
+      <div class="row-tight" style="flex-wrap:wrap"><button class="btn sm primary" id="s-focus" ${view.focus && view.focus.id === n.id ? raw('disabled') : ''}>${t('focusOn')}</button><button class="btn sm" id="s-ask">${t('askAbout')}</button><button class="btn sm ghost" id="s-from">${t('pathFrom')}</button><button class="btn sm ghost" id="s-close">${t('close')}</button></div>`);
+    $('s-focus').onclick = () => setFocus(n.id);
     $('s-ask').onclick = () => { pending.question = n.label; Hostwerk.setTab('ask'); };
     $('s-from').onclick = () => { pending.from = n.label; Hostwerk.setTab('ask'); };
     $('s-close').onclick = () => { sel = null; draw(); renderSide(); };
   } catch (e) { Hostwerk.render(side, html`<p class="c-err small">${e.message}</p>`); }
+}
+/** Fokus an/aus: nur die Nachbarschaft eines Knotens zeichnen (auch Knoten, die im Gesamtbild fehlen). */
+function setFocus(id, hops) {
+  focus = id ? { id, hops: hops || (focus && focus.hops) || 1 } : null;
+  if (!id) { sel = null; cam.x = 0; cam.y = 0; cam.z = 1; }
+  view = null; renderGraph();
 }
 function select(id, center) {
   sel = id;
@@ -139,12 +165,13 @@ function drawSetup() {
     const h = hit(e.clientX - r.left, e.clientY - r.top); if (h !== hover) { hover = h; cv.title = h ? (view.nodes.find((n) => n.id === h) || {}).label || '' : ''; draw(); }
   };
   cv.onpointerup = (e) => { const r = cv.getBoundingClientRect(); if (drag && !drag.moved) { const h = hit(e.clientX - r.left, e.clientY - r.top); if (h) select(h, false); } drag = null; };
+  cv.ondblclick = (e) => { const r = cv.getBoundingClientRect(); const h = hit(e.clientX - r.left, e.clientY - r.top); if (h) setFocus(h); };
   cv.onwheel = (e) => { e.preventDefault(); cam.z = Math.min(12, Math.max(0.4, cam.z * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); draw(); };
   cv.onkeydown = (e) => {
     const step = 0.15 / cam.z;
     if (e.key === '+' || e.key === '=') cam.z = Math.min(12, cam.z * 1.2); else if (e.key === '-') cam.z = Math.max(0.4, cam.z / 1.2);
     else if (e.key === 'ArrowLeft') cam.x += step; else if (e.key === 'ArrowRight') cam.x -= step; else if (e.key === 'ArrowUp') cam.y += step; else if (e.key === 'ArrowDown') cam.y -= step;
-    else if (e.key === '0') { cam.x = 0; cam.y = 0; cam.z = 1; } else return;
+    else if (e.key === '0') { cam.x = 0; cam.y = 0; cam.z = 1; } else if ((e.key === 'f' || e.key === 'F') && sel) { setFocus(sel); return; } else if (e.key === 'Escape' && focus) { setFocus(null); return; } else return;
     e.preventDefault(); draw();
   };
   resize();
@@ -165,6 +192,12 @@ function draw() {
   const text = css.getPropertyValue('--text').trim() || '#111';
   const line = css.getPropertyValue('--line-2').trim() || '#999';
   ctx.clearRect(0, 0, r.width, r.height);
+  if (view.focus) {
+    ctx.strokeStyle = line; ctx.globalAlpha = 0.35; ctx.setLineDash([2, 6]);
+    const c = toScreen({ x: 0, y: 0 }, r); const maxD = Math.max(1, ...Object.values(view.focus.dist));
+    for (let d = 1; d <= maxD; d++) { ctx.beginPath(); ctx.arc(c[0], c[1], scale(r) * 0.95 * d / maxD, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
   const near = new Set(); if (sel) for (const e of view.edges) { if (e[0] === sel) near.add(e[1]); if (e[1] === sel) near.add(e[0]); }
   ctx.lineWidth = 1;
   for (const e of view.edges) {
@@ -202,6 +235,9 @@ function draw() {
 
 /* ---------------- Fragen ---------------- */
 const pending = { question: '', from: '' };
+// Eingrenzen (große Projekte): Bereich, Ausschlüsse, Arten, Tiefe – je Ansicht gemerkt
+const narrow = { scope: '', exclude: '', kinds: [], depth: 1, open: false };
+const narrowCount = () => (narrow.scope ? 1 : 0) + (narrow.exclude ? 1 : 0) + (narrow.kinds.length ? 1 : 0) + (narrow.depth > 1 ? 1 : 0);
 async function renderAsk() {
   const s = src(); if (!s) return Hostwerk.render('#ask', html`<p class="muted">${t('noProjects')}</p>`);
   Hostwerk.render('#ask', html`
@@ -210,6 +246,15 @@ async function renderAsk() {
         <div class="card card-pad stack">
           <label class="label" for="q">${t('question')}</label>
           <textarea class="input" id="q" rows="2" placeholder="${t('questionPlaceholder')}">${pending.question}</textarea>
+          <details class="kg-narrow" ${narrow.open ? raw('open') : ''}><summary class="small">${t('narrow')}${narrowCount() ? html` <span class="badge accent">${narrowCount()}</span>` : ''}</summary>
+            <div class="stack" style="gap:8px;margin-top:8px">
+              <div class="row"><label class="grow stack" style="gap:4px"><span class="label">${t('scope')}</span><input class="input" id="nscope" value="${narrow.scope}" placeholder="${t('scopePh')}"></label>
+                <label class="grow stack" style="gap:4px"><span class="label">${t('exclude')}</span><input class="input" id="nexcl" value="${narrow.exclude}" placeholder="${t('excludePh')}"></label></div>
+              <div class="row" style="flex-wrap:wrap;gap:6px 12px"><span class="label">${t('kinds')}</span>${['class', 'function', 'method', 'file', 'doc', 'table', 'note'].map((k) => html`<label class="row-tight small"><input type="checkbox" data-kind="${k}" ${narrow.kinds.includes(k) ? raw('checked') : ''}>${t('kind_' + k)}</label>`)}</div>
+              <div class="row" style="flex-wrap:wrap"><span class="label">${t('depth')}</span><div class="seg" role="group" aria-label="${t('depth')}">${[1, 2, 3].map((d) => html`<button type="button" class="${narrow.depth === d ? 'active' : ''}" data-depth="${d}" aria-pressed="${narrow.depth === d}">${t('step' + d)}</button>`)}</div>
+                <button type="button" class="btn xs ghost right" id="nreset">${t('narrowReset')}</button></div>
+              <span class="tiny muted">${t('narrowHint')}</span>
+            </div></details>
           <div class="row"><span class="tiny muted grow">${t('askHint')}</span><button class="btn primary" id="go">${t('ask')}</button></div>
         </div>
         <div class="card card-pad stack">
@@ -223,7 +268,10 @@ async function renderAsk() {
     </div>`);
   pending.question = ''; pending.from = '';
   const answer = async (p) => { Hostwerk.render('#answer', html`<div class="hw-skeleton" style="height:140px"></div>`); try { const r = await p; Hostwerk.render('#answer', md(r.text)); loadHistory(); } catch (e) { Hostwerk.render('#answer', html`<p class="c-err">${e.message}</p>`); } };
-  $('go').onclick = () => { const q = $('q').value.trim(); if (q) answer(Hostwerk.post(`/knowledge/${enc(s.id)}/query`, { question: q })); };
+  const readNarrow = () => { narrow.scope = $('nscope').value.trim(); narrow.exclude = $('nexcl').value.trim(); narrow.kinds = [...document.querySelectorAll('[data-kind]')].filter((x) => x.checked).map((x) => x.dataset.kind); narrow.open = document.querySelector('.kg-narrow').open; Hostwerk.storage.set('narrow', narrow).catch(() => {}); };
+  for (const b of document.querySelectorAll('[data-depth]')) b.onclick = () => { readNarrow(); narrow.depth = Number(b.dataset.depth); for (const x of document.querySelectorAll('[data-depth]')) { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); } Hostwerk.storage.set('narrow', narrow).catch(() => {}); };
+  $('nreset').onclick = () => { Object.assign(narrow, { scope: '', exclude: '', kinds: [], depth: 1 }); Hostwerk.storage.set('narrow', narrow).catch(() => {}); const q = $('q').value; renderAsk().then(() => { $('q').value = q; document.querySelector('.kg-narrow').open = true; }); };
+  $('go').onclick = () => { const q = $('q').value.trim(); readNarrow(); if (q) answer(Hostwerk.post(`/knowledge/${enc(s.id)}/query`, { question: q, scope: narrow.scope || undefined, exclude: narrow.exclude || undefined, kinds: narrow.kinds.length ? narrow.kinds : undefined, depth: narrow.depth })); };
   $('q').onkeydown = (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('go').click(); };
   $('pgo').onclick = () => { const a = $('pf').value.trim(); const b = $('pt').value.trim(); if (a && b) answer(Hostwerk.post(`/knowledge/${enc(s.id)}/path`, { from: a, to: b })); };
   $('ego').onclick = () => { const n = $('en').value.trim(); if (n) answer(Hostwerk.post(`/knowledge/${enc(s.id)}/explain`, { name: n })); };
@@ -445,6 +493,7 @@ Hostwerk.ready().then(async (info) => {
   Hostwerk.on('tab', show);
   Hostwerk.on('theme', () => draw());
   Hostwerk.on('lang', () => { loadStatus().then(() => show(tab)).catch(fail); });
+  try { const n = await Hostwerk.storage.get('narrow'); if (n && typeof n === 'object') Object.assign(narrow, n); } catch { /* egal */ }
   try { await loadStatus(); } catch (e) { fail(e); }
   show(tab);
 });

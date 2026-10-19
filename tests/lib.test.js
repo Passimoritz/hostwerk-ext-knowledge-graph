@@ -53,3 +53,13 @@ test('Relative Zeit in beiden Sprachen', () => {
   assert.strictEqual(KG.ago(Date.now() - 5 * 60000, 'de'), 'vor 5 Min');
   assert.strictEqual(KG.ago(Date.now() - 3 * 3600000, 'en'), '3 h ago');
 });
+
+test('Fokus-Ansicht: Mitte, Ringe nach Schritten, deterministisch', () => {
+  const nodes = [{ id: 'm', c: 0 }, { id: 'a', c: 1, label: 'a' }, { id: 'b', c: 0, label: 'b' }, { id: 'x', c: 2, label: 'x' }];
+  const dist = { m: 0, a: 1, b: 1, x: 2 };
+  const p = KG.radial(nodes, dist);
+  assert.deepStrictEqual(p.get('m'), { x: 0, y: 0 });
+  const r = (id) => Math.hypot(p.get(id).x, p.get(id).y);
+  assert.ok(Math.abs(r('a') - r('b')) < 1e-9 && r('x') > r('a') && r('x') <= 0.951);
+  assert.deepStrictEqual([...KG.radial(nodes, dist).entries()], [...p.entries()]);
+});

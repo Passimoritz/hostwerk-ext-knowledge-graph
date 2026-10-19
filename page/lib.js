@@ -107,6 +107,23 @@
     const d = Math.round(h / 24); return de ? `vor ${d} Tagen` : `${d} days ago`;
   }
 
-  const api = { markdown, color, layout, search, ago, esc, KIND_SHAPE, PALETTE };
+  /**
+   * Fokus-Ansicht: der gewählte Knoten in der Mitte, Nachbarn auf Ringen nach Schrittzahl. Innerhalb eines Rings nach
+   * Gruppe und dann nach Name sortiert – gleiche Eingabe ergibt immer dasselbe Bild.
+   */
+  function radial(nodes, dist) {
+    const pos = new Map(); const rings = new Map();
+    for (const n of nodes) { const d = dist[n.id] ?? 3; if (!rings.has(d)) rings.set(d, []); rings.get(d).push(n); }
+    const maxD = Math.max(1, ...rings.keys());
+    for (const [d, list] of rings) {
+      if (d === 0) { for (const n of list) pos.set(n.id, { x: 0, y: 0 }); continue; }
+      list.sort((a, b) => (a.c ?? 0) - (b.c ?? 0) || String(a.label || a.id).localeCompare(String(b.label || b.id)));
+      const r = 0.95 * d / maxD; const off = d * 0.37;
+      list.forEach((n, i) => { const a = off + (i / list.length) * Math.PI * 2; pos.set(n.id, { x: Math.cos(a) * r, y: Math.sin(a) * r }); });
+    }
+    return pos;
+  }
+
+  const api = { markdown, color, layout, radial, search, ago, esc, KIND_SHAPE, PALETTE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.KG = api;
 })(typeof window !== 'undefined' ? window : globalThis);
