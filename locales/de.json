@@ -120,5 +120,18 @@
   "safety2": "In CLAUDE.md steht nur ein markierter Abschnitt mit höchstens 3 KB. Vor dem Speichern prüft Hostwerk, dass sich sonst nichts ändert.",
   "safety3": "Jede Änderung steht in einem Änderungsbuch. „Vergessen“ macht genau diese Änderungen rückgängig.",
   "safety4": "Antworten an Claude sind gekürzt, damit sein Kontext nicht vollläuft.",
-  "safety5": "Pausieren stellt Claude sofort auf „wie gewohnt“ um, ohne etwas zu löschen."
+  "safety5": "Pausieren stellt Claude sofort auf „wie gewohnt“ um, ohne etwas zu löschen.",
+  "area": "Bereich",
+  "kind": "Art",
+  "area.ich": "Über mich",
+  "area.allgemein": "Allgemein",
+  "area.projekt": "Dieses Projekt",
+  "dragHint": "Karten in einen anderen Bereich ziehen – oder unten auf der Karte Bereich und Art wählen.",
+  "cat.wissen": "Wissen",
+  "cat.regel": "Regel",
+  "cat.vorliebe": "Vorliebe",
+  "cat.ziel": "Ziel",
+  "cat.datei": "Datei",
+  "cat.pruefen": "Prüfen",
+  "cat.idee": "Idee"
 }

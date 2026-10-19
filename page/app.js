@@ -260,6 +260,19 @@ async function renderMemory() {
   try { list = await Hostwerk.get(`/knowledge/${enc(s.id)}/memory`); } catch (e) { fail(e); }
   const review = list.filter((m) => !m.confirmed);
   const SRC = { user: t('src.user'), claude: 'Claude', hostwerk: 'Hostwerk' };
+  const CATS = ['wissen', 'regel', 'vorliebe', 'ziel', 'datei', 'pruefen', 'idee'];
+  const areaOf = (m) => (m.cluster === 'ich' ? 'ich' : m.cluster === 'allgemein' ? 'allgemein' : 'projekt');
+  // Karten lassen sich in einen anderen Bereich ziehen; ohne Maus: Auswahl „Bereich“ und „Art“ auf jeder Karte
+  const card = (m) => html`<div class="list-item kg-card" draggable="true" data-drag="${m.id}" style="align-items:flex-start">
+      <div class="grow" style="min-width:0"><b>${m.text}</b>${m.detail ? html`<div class="small muted">${m.detail}</div>` : ''}
+        <div class="row-tight" style="margin-top:4px;flex-wrap:wrap">
+          <select class="select sm" data-area="${m.id}" aria-label="${t('area')}" style="width:auto">${['ich', 'allgemein', 'projekt'].map((a) => html`<option value="${a}" ${areaOf(m) === a ? raw('selected') : ''}>${t('area.' + a)}</option>`)}</select>
+          <select class="select sm" data-cat="${m.id}" aria-label="${t('kind')}" style="width:auto">${CATS.map((c) => html`<option value="${c}" ${m.cat === c ? raw('selected') : ''}>${t('cat.' + c)}</option>`)}</select>
+        </div>
+      </div>
+      <span class="badge ${m.source === 'claude' ? 'accent' : ''}">${SRC[m.source] || m.source}</span>
+      <button class="btn xs ghost" data-edit="${m.id}">${t('edit')}</button><button class="btn xs ghost danger" data-del="${m.id}">${t('delete')}</button>
+    </div>`;
   const item = (m) => html`<div class="list-item" style="align-items:flex-start">
       <div class="grow" style="min-width:0"><b>${m.text}</b>${m.detail ? html`<div class="small muted">${m.detail}</div>` : ''}${m.links.length ? html`<div class="tiny muted">${t('about')}: ${m.links.join(', ')}</div>` : ''}</div>
       <span class="badge ${m.source === 'claude' ? 'accent' : ''}">${SRC[m.source] || m.source}</span>
@@ -270,10 +283,22 @@ async function renderMemory() {
     <div class="grid grid-2">
       <div class="stack">
         ${review.length ? html`<div class="card card-pad stack"><h3 style="margin:0">${t('review')}</h3><p class="small muted" style="margin:0">${t('reviewHint')}</p>${review.map(item)}</div>` : ''}
-        <div class="card card-pad stack"><h3 style="margin:0">${t('memoryAll')}</h3>${list.length ? list.filter((m) => m.confirmed).map(item) : html`<p class="muted small">${t('memoryEmpty')}</p>`}</div>
+        <div class="card card-pad stack"><h3 style="margin:0">${t('memoryAll')}</h3><p class="small muted" style="margin:0">${t('dragHint')}</p>
+          ${list.length ? html`<div class="kg-areas">${['ich', 'allgemein', 'projekt'].map((a) => html`<div class="kg-area" data-drop="${a}"><div class="tiny bold muted">${t('area.' + a)}</div>${list.filter((m) => m.confirmed && areaOf(m) === a).map(card)}</div>`)}</div>` : html`<p class="muted small">${t('memoryEmpty')}</p>`}
+        </div>
       </div>
       <div class="card card-pad stack" id="memform"></div>
     </div>`);
+  const move = async (mid, body) => { try { await Hostwerk.put(`/knowledge/${enc(s.id)}/memory/${enc(mid)}`, body); renderMemory(); } catch (e) { fail(e); } };
+  for (const el of document.querySelectorAll('[data-drag]')) el.ondragstart = (e) => { e.dataTransfer.setData('text/plain', el.dataset.drag); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); };
+  for (const el of document.querySelectorAll('[data-drag]')) el.ondragend = () => el.classList.remove('dragging');
+  for (const z of document.querySelectorAll('[data-drop]')) {
+    z.ondragover = (e) => { e.preventDefault(); z.classList.add('over'); };
+    z.ondragleave = () => z.classList.remove('over');
+    z.ondrop = (e) => { e.preventDefault(); z.classList.remove('over'); const mid = e.dataTransfer.getData('text/plain'); const m = list.find((x) => x.id === mid); if (m && areaOf(m) !== z.dataset.drop) move(mid, { area: z.dataset.drop }); };
+  }
+  for (const sel of document.querySelectorAll('[data-area]')) sel.onchange = () => move(sel.dataset.area, { area: sel.value });
+  for (const sel of document.querySelectorAll('[data-cat]')) sel.onchange = () => move(sel.dataset.cat, { cat: sel.value });
   memForm(null);
   for (const b of document.querySelectorAll('[data-ok]')) b.onclick = async () => { try { await Hostwerk.put(`/knowledge/${enc(s.id)}/memory/${enc(b.dataset.ok)}`, { confirmed: true }); renderMemory(); } catch (e) { fail(e); } };
   for (const b of document.querySelectorAll('[data-del]')) b.onclick = async () => { try { await Hostwerk.del(`/knowledge/${enc(s.id)}/memory/${enc(b.dataset.del)}`); renderMemory(); } catch (e) { fail(e); } };

@@ -22,3 +22,9 @@
 .kg-check { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; }
 .kg-check input { margin-top: 3px; }
 .kg-path { font-family: var(--mono, monospace); font-size: 12px; overflow-wrap: anywhere; }
+.kg-areas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .kg-areas { grid-template-columns: 1fr; } }
+.kg-area { border: 1px dashed var(--line); border-radius: 10px; padding: 8px; min-height: 80px; display: flex; flex-direction: column; gap: 6px; }
+.kg-area.over { border-color: var(--accent); background: var(--accent-soft); }
+.kg-card { cursor: grab; }
+.kg-card.dragging { opacity: .5; }

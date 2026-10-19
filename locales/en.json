@@ -120,5 +120,18 @@
   "safety2": "CLAUDE.md only gets one marked section of at most 3 KB. Before saving, Hostwerk checks that nothing else changes.",
   "safety3": "Every change goes into a change log. “Forget” undoes exactly those changes.",
   "safety4": "Answers to Claude are kept short so its context doesn't fill up.",
-  "safety5": "Pausing switches Claude back to “as usual” right away, without deleting anything."
+  "safety5": "Pausing switches Claude back to “as usual” right away, without deleting anything.",
+  "area": "Area",
+  "kind": "Type",
+  "area.ich": "About me",
+  "area.allgemein": "General",
+  "area.projekt": "This project",
+  "dragHint": "Drag cards into another area – or pick area and type at the bottom of the card.",
+  "cat.wissen": "Knowledge",
+  "cat.regel": "Rule",
+  "cat.vorliebe": "Preference",
+  "cat.ziel": "Goal",
+  "cat.datei": "File",
+  "cat.pruefen": "Check",
+  "cat.idee": "Idea"
 }

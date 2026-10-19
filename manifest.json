@@ -2,24 +2,82 @@
   "$schema": "https://raw.githubusercontent.com/Passimoritz/hostwerk-public/main/sdk/manifest.schema.json",
   "id": "knowledge-graph",
   "color": "#7c3aed",
-  "name": { "de": "Wissensgraph", "en": "Knowledge graph" },
-  "description": { "de": "Macht aus deinen Projekten (Code, Doku, Obsidian-Notizen) einen durchsuchbaren Wissensgraphen – für dich und für Claude. Claude fragt den Graphen statt Dateien zu durchsuchen, lernt dazu und lässt sich jederzeit spurlos wieder trennen.", "en": "Turns your projects (code, docs, Obsidian notes) into a searchable knowledge graph – for you and for Claude. Claude queries the graph instead of searching files, learns along the way and can be disconnected again at any time without leaving traces." },
-  "permissions": ["read:knowledge", "change:knowledge", "connect:claude"],
+  "name": {
+    "de": "Wissensgraph",
+    "en": "Knowledge graph"
+  },
+  "description": {
+    "de": "Macht aus deinen Projekten (Code, Doku, Obsidian-Notizen) einen durchsuchbaren Wissensgraphen – für dich und für Claude. Claude fragt den Graphen statt Dateien zu durchsuchen, lernt dazu und lässt sich jederzeit spurlos wieder trennen.",
+    "en": "Turns your projects (code, docs, Obsidian notes) into a searchable knowledge graph – for you and for Claude. Claude queries the graph instead of searching files, learns along the way and can be disconnected again at any time without leaving traces."
+  },
+  "permissions": [
+    "read:knowledge",
+    "change:knowledge",
+    "connect:claude"
+  ],
   "page": {
-    "title": { "de": "Wissensgraph", "en": "Knowledge graph" },
-    "description": { "de": "Code, Doku und Notizen als Graph – Fragen stellen, Zusammenhänge sehen, Claude einbinden und wieder vergessen.", "en": "Code, docs and notes as a graph – ask questions, see connections, connect Claude and forget it again." },
+    "title": {
+      "de": "Wissensgraph",
+      "en": "Knowledge graph"
+    },
+    "description": {
+      "de": "Code, Doku und Notizen als Graph – Fragen stellen, Zusammenhänge sehen, Claude einbinden und wieder vergessen.",
+      "en": "Code, docs and notes as a graph – ask questions, see connections, connect Claude and forget it again."
+    },
     "icon": "network",
     "file": "page/index.html",
     "tabs": [
-      { "id": "graph", "title": { "de": "Graph", "en": "Graph" }, "icon": "network" },
-      { "id": "ask", "title": { "de": "Fragen", "en": "Ask" }, "icon": "message" },
-      { "id": "report", "title": { "de": "Bericht", "en": "Report" }, "icon": "book" },
-      { "id": "memory", "title": { "de": "Gedächtnis", "en": "Memory" }, "icon": "sparkles" },
-      { "id": "obsidian", "title": { "de": "Obsidian", "en": "Obsidian" }, "icon": "file" },
-      { "id": "claude", "title": { "de": "Claude", "en": "Claude" }, "icon": "bot" }
+      {
+        "id": "graph",
+        "title": {
+          "de": "Graph",
+          "en": "Graph"
+        },
+        "icon": "network"
+      },
+      {
+        "id": "ask",
+        "title": {
+          "de": "Fragen",
+          "en": "Ask"
+        },
+        "icon": "message"
+      },
+      {
+        "id": "report",
+        "title": {
+          "de": "Bericht",
+          "en": "Report"
+        },
+        "icon": "book"
+      },
+      {
+        "id": "memory",
+        "title": {
+          "de": "Gedächtnis",
+          "en": "Memory"
+        },
+        "icon": "sparkles"
+      },
+      {
+        "id": "obsidian",
+        "title": {
+          "de": "Obsidian",
+          "en": "Obsidian"
+        },
+        "icon": "file"
+      },
+      {
+        "id": "claude",
+        "title": {
+          "de": "Claude",
+          "en": "Claude"
+        },
+        "icon": "bot"
+      }
     ]
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Hostwerk",
   "homepage": "https://github.com/Passimoritz/hostwerk-ext-knowledge-graph",
   "license": "MIT",
