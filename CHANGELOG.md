@@ -1,3 +1,7 @@
+## 1.4.0
+
+- New animated icon and a banner for Hostwerk's new extension page, category “ai”. / Neues bewegtes Symbol und ein Banner für die neue Erweiterungsseite, Kategorie „ai“.
+
 ## 1.3.0
 
 - Reading mode per project: automatic (precise from 600 code files), precise or fast. Precise uses tree-sitter in Hostwerk: definitions, calls and inheritance from the real syntax tree for JavaScript/TypeScript, Python and Java – fewer "ambiguous" names in large projects. A badge shows when a graph was read precisely. / Genau auslesen mit tree-sitter.

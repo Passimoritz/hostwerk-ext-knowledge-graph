@@ -1,3 +1,5 @@
+![Knowledge graph](banner.svg)
+
 # Knowledge graph
 
 Turns your projects (code, docs, Obsidian notes) into a searchable knowledge graph, for you and for Claude. Claude asks the graph instead of searching through files, learns along the way, and can be disconnected again at any time without leaving traces.

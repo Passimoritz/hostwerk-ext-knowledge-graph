@@ -1,3 +1,5 @@
+![Wissensgraph](banner.svg)
+
 # Wissensgraph
 
 Macht aus deinen Projekten (Code, Doku, Obsidian-Notizen) einen durchsuchbaren Wissensgraphen – für dich und für Claude. Claude fragt den Graphen, statt Dateien zu durchsuchen, lernt dazu und lässt sich jederzeit spurlos wieder trennen.
