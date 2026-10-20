@@ -1,3 +1,7 @@
+## 1.4.1
+
+- Remembers the chosen project and the search options again (permission "storage" was missing – Hostwerk declined it with a warning). / Merkt sich das gewählte Projekt und die Such-Einstellungen wieder (Recht „storage“ fehlte – Hostwerk hat es mit einer Warnung abgelehnt).
+
 ## 1.4.0
 
 - New animated icon and a banner for Hostwerk's new extension page, category “ai”. / Neues bewegtes Symbol und ein Banner für die neue Erweiterungsseite, Kategorie „ai“.

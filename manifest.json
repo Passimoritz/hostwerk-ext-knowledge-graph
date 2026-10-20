@@ -14,7 +14,8 @@
   "permissions": [
     "read:knowledge",
     "change:knowledge",
-    "connect:claude"
+    "connect:claude",
+    "storage"
   ],
   "page": {
     "title": {
@@ -139,7 +140,7 @@
       }
     ]
   },
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": "Hostwerk",
   "homepage": "https://github.com/Passimoritz/hostwerk-ext-knowledge-graph",
   "license": "MIT",
