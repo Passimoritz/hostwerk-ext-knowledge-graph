@@ -8,6 +8,7 @@ An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension
 
 ## What you get
 
+- **Where:** Projects → Knowledge graph – no own sidebar entry since 1.5.1; the full page stays under Extensions → Open
 - **Graph:** classes, functions, methods, files, docs, SQL tables and rationale comments (`WHY:`, `NOTE:`, `ADR-…`).
   - **Connections:** calls, imports, inheritance, links between documents, foreign keys.
   - **Certainty:** every connection is marked `EXTRACTED` (written that way in the source) or `INFERRED` (resolved by name). Ambiguous names are counted, never guessed.

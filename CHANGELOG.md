@@ -1,3 +1,7 @@
+## 1.5.1
+
+- Lives where it belongs: Projects → Knowledge graph – no own sidebar entry any more (Hostwerk 3.0+); the full page stays under Extensions → Open and can be pinned in the sidebar settings. / Steckt jetzt dort, wo sie hingehört: Projekte → Wissensgraph – kein eigener Seitenleisten-Eintrag mehr (Hostwerk 3.0+); die ganze Seite bleibt unter Erweiterungen → Öffnen und lässt sich in den Seitenleisten-Einstellungen anheften.
+
 ## 1.5.0
 
 - Group colours follow Hostwerk's accent and light/dark mode instead of a fixed palette. / Gruppenfarben folgen Hostwerks Akzent und Hell/Dunkel statt einer festen Palette.

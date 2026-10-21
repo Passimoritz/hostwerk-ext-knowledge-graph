@@ -8,6 +8,7 @@ Eine offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erwei
 
 ## Was du bekommst
 
+- **Wo:** Projekte → Wissensgraph – seit 1.5.1 ohne eigenen Seitenleisten-Eintrag; die ganze Seite bleibt unter Erweiterungen → Öffnen
 - **Graph:** Klassen, Funktionen, Methoden, Dateien, Doku, SQL-Tabellen und Begründungen aus Kommentaren (`WHY:`, `NOTE:`, `ADR-…`).
   - **Verbindungen:** Aufrufe, Importe, Vererbung, Verweise zwischen Dokumenten, Fremdschlüssel.
   - **Sicherheit:** Jede Verbindung ist markiert: `EXTRACTED` (steht so im Quelltext) oder `INFERRED` (über den Namen aufgelöst). Mehrdeutiges wird gezählt, nie geraten.
