@@ -4,7 +4,7 @@
 
 Turns your projects (code, docs, Obsidian notes) into a searchable knowledge graph, for you and for Claude. Claude asks the graph instead of searching through files, learns along the way, and can be disconnected again at any time without leaving traces.
 
-An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension (SDK 2.3). The engine runs inside Hostwerk, entirely on your computer: no AI and no internet are needed to build the graph. This extension is its interface.
+An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension. The engine runs inside Hostwerk, entirely on your computer: no AI and no internet are needed to build the graph. This extension is its interface.
 
 ## What you get
 
@@ -45,6 +45,15 @@ An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension
 - **Pause:** Claude gets the short note "paused" and works as usual. Nothing is deleted.
 - **Short answers:** answers to Claude are capped so they don't fill its context. Secrets are rejected.
 
+## Where you find it
+
+- In the sidebar under *Develop*, right after *Projects*, with the tabs Graph, Ask, Report, Memory, Obsidian and Claude
+- As the tab **Knowledge graph** in Hostwerk's *Projects* area (with its own view switcher)
+- Shortcuts **Ctrl+Alt+G** (graph) and **Ctrl+Alt+K** (ask) – changeable under Settings → General → Shortcuts
+- Group colours follow Hostwerk's accent colour and light/dark mode
+- Loading errors show a message with *Try again*
+- The extension “Claude” may add tabs, actions and settings here, every other extension tabs (`allowExtensions`)
+
 ## Permissions
 
 | Permission | Why |
@@ -52,6 +61,7 @@ An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension
 | `read:knowledge` | Read projects, graph, report, question history, memory and Claude status |
 | `change:knowledge` | Build and query the graph, add folders, edit memory, Obsidian export. These only touch the graph's own data, so there is no prompt each time. |
 | `connect:claude` | Write the section/skill into a project and forget them again. Hostwerk asks first. |
+| `storage` | Remembers the chosen project and the search options |
 
 ## Develop
 

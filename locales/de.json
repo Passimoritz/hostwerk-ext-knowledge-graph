@@ -166,5 +166,14 @@
   "read_off": "Auslesen: schnell",
   "precise": "genau",
   "preciseHint": "Mit tree-sitter gelesen: Definitionen und Aufrufe aus dem echten Syntaxbaum.",
-  "readModeSaved": "Gespeichert – der Graph wird neu gebaut"
+  "readModeSaved": "Gespeichert – der Graph wird neu gebaut",
+  "errorTitle": "Das ließ sich nicht laden",
+  "retry": "Erneut versuchen",
+  "views": "Ansicht",
+  "view.graph": "Graph",
+  "view.ask": "Fragen",
+  "view.report": "Bericht",
+  "view.memory": "Gedächtnis",
+  "view.obsidian": "Obsidian",
+  "view.claude": "Claude"
 }

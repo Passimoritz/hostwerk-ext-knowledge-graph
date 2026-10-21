@@ -25,9 +25,35 @@
     return out.join('');
   }
 
-  /** Farbe je Gruppe – gut unterscheidbar, in hellem und dunklem Design lesbar. */
+  /** Rückfall-Farben je Gruppe (ohne Akzent, z. B. in Tests). */
   const PALETTE = ['#7c3aed', '#0ea5e9', '#16a34a', '#d97706', '#dc2626', '#db2777', '#0d9488', '#9333ea', '#65a30d', '#ea580c', '#2563eb', '#be123c'];
-  const color = (c) => (c == null || c < 0 ? '#94a3b8' : PALETTE[c % PALETTE.length]);
+  const color = (c, pal) => { const p = pal && pal.colors ? pal : { colors: PALETTE, none: '#94a3b8' }; return c == null || c < 0 ? p.none : p.colors[c % p.colors.length]; };
+
+  function hexToHsl(hex) {
+    const rgb = String(hex || '').trim().match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i);
+    if (rgb) hex = '#' + rgb.slice(1, 4).map((x) => Math.min(255, Number(x)).toString(16).padStart(2, '0')).join('');
+    const m = String(hex || '').trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);
+    if (!m) return null;
+    const h6 = m[1].length === 3 ? m[1].replace(/./g, (x) => x + x) : m[1];
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(h6.slice(i, i + 2), 16) / 255);
+    const mx = Math.max(r, g, b); const mn = Math.min(r, g, b); const l = (mx + mn) / 2; const d = mx - mn;
+    if (!d) return { h: 0, s: 0, l };
+    const s = d / (1 - Math.abs(2 * l - 1));
+    const h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return { h: (h * 60 + 360) % 360, s, l };
+  }
+  /**
+   * Gruppenfarben passend zu Hostwerks Akzent und Hell/Dunkel: Startton = Akzent, weitere Töne im goldenen Winkel
+   * (gut unterscheidbar), Helligkeit so, dass Punkte auf der Fläche erkennbar bleiben (dunkel heller, hell dunkler).
+   */
+  function palette(accent, theme, n = 12) {
+    const base = hexToHsl(accent) || { h: 262, s: 0.7, l: 0.6 };
+    const light = theme === 'light';
+    const sat = Math.round(Math.min(80, Math.max(55, base.s * 100)));
+    const lum = light ? 40 : 64;
+    const colors = Array.from({ length: n }, (_, i) => `hsl(${Math.round((base.h + i * 137.508) % 360)} ${sat}% ${lum + (i % 2 ? (light ? 6 : -6) : 0)}%)`);
+    return { colors, none: light ? 'hsl(215 14% 55%)' : 'hsl(215 14% 62%)' };
+  }
   const KIND_SHAPE = { class: 'square', type: 'square', file: 'circle', doc: 'diamond', note: 'diamond', table: 'square', function: 'circle', method: 'circle', package: 'ring' };
 
   /** Zufall mit festem Startwert – gleiche Daten ergeben immer dasselbe Bild. */
@@ -124,6 +150,6 @@
     return pos;
   }
 
-  const api = { markdown, color, layout, radial, search, ago, esc, KIND_SHAPE, PALETTE };
+  const api = { markdown, color, palette, hexToHsl, layout, radial, search, ago, esc, KIND_SHAPE, PALETTE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.KG = api;
 })(typeof window !== 'undefined' ? window : globalThis);

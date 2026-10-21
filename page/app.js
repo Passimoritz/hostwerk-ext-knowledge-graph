@@ -21,6 +21,15 @@ const lang = () => (Hostwerk.info().lang === 'en' ? 'en' : 'de');
 const declined = (e) => /Abgelehnt|Declined/.test(e.message);
 const fail = (e) => { if (!declined(e)) Hostwerk.toast(e.message, { kind: 'error' }); };
 const md = (s) => html`<div class="kg-md">${raw(KG.markdown(s))}</div>`;
+// Gruppenfarben aus Hostwerks Akzent und Hell/Dunkel (neu berechnet, wenn sich das Design ändert)
+let pal = null;
+const col = (c) => KG.color(c, pal || (pal = KG.palette(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), Hostwerk.theme)));
+const VIEWS = ['graph', 'ask', 'report', 'memory', 'obsidian', 'claude'];
+/** Fehler in einem Bereich mit „Erneut versuchen“ (statt ewig Skelett). */
+function showError(where, e) {
+  if (declined(e)) return;
+  Hostwerk.render(where, html`<div class="callout err" role="alert"><div class="grow"><b class="callout-title">${t('errorTitle')}</b><span>${e.message}</span></div><button class="btn sm" data-retry>${t('retry')}</button></div>`);
+}
 
 /* ---------------- Kopfzeile: Projekt wählen, bauen ---------------- */
 async function loadStatus() {
@@ -32,6 +41,7 @@ async function loadStatus() {
 function renderHead() {
   const s = src();
   Hostwerk.render('#head', html`
+    ${Hostwerk.embed === 'tab' ? html`<div class="seg kg-views" role="group" aria-label="${t('views')}">${VIEWS.map((x) => html`<button type="button" class="${x === tab ? 'active' : ''}" data-view="${x}" aria-pressed="${x === tab ? 'true' : 'false'}">${t('view.' + x)}</button>`)}</div>` : ''}
     <label class="label" for="pick">${t('project')}</label>
     <select class="select" id="pick">${st.sources.map((x) => html`<option value="${x.id}" ${x.id === cur ? raw('selected') : ''}>${x.name}${x.kind === 'folder' ? (x.vault ? ' (Obsidian)' : ` (${t('folder')})`) : ''}</option>`)}</select>
     <button class="btn sm ghost" id="addFolder">${t('addFolder')}</button>
@@ -80,21 +90,21 @@ async function renderGraph() {
   const v = view;
   Hostwerk.render('#graph', html`
     ${v.focus ? html`<div class="kg-focusbar" role="status">
-      <span class="badge accent">${t('focus')}</span><b class="ellipsis" style="min-width:0">${v.focus.label}</b>
+      <span class="badge accent">${t('focus')}</span><b class="ellipsis kg-min0">${v.focus.label}</b>
       <div class="seg" role="group" aria-label="${t('focusSteps')}">${[1, 2, 3].map((h) => html`<button class="${v.focus.hops === h ? 'active' : ''}" data-hops="${h}" aria-pressed="${v.focus.hops === h}">${t('step' + h)}</button>`)}</div>
       <span class="small muted">${t('focusCount', { n: v.nodes.length })}${v.focus.cut ? ` · ${t('focusCut')}` : ''}</span>
       <button class="btn sm ghost right" id="unfocus">${t('focusOff')}</button></div>` : ''}
-    <div class="row" style="margin-bottom:10px;flex-wrap:wrap">
-      <input class="input" id="find" placeholder="${t('findPlaceholder')}" aria-label="${t('findPlaceholder')}" style="max-width:260px">
-      <select class="select" id="group" style="width:auto;max-width:260px" aria-label="${t('group')}"><option value="">${t('allGroups')}</option>${v.communities.filter((c) => c.size >= 3).map((c) => html`<option value="${c.id}" ${String(c.id) === String(group) ? raw('selected') : ''}>${c.label} (${c.size})</option>`)}</select>
+    <div class="row kg-mb-3 kg-wrap-row">
+      <input class="input kg-narrow-field" id="find" placeholder="${t('findPlaceholder')}" aria-label="${t('findPlaceholder')}">
+      <select class="select kg-auto kg-narrow-field" id="group" aria-label="${t('group')}"><option value="">${t('allGroups')}</option>${v.communities.filter((c) => c.size >= 3).map((c) => html`<option value="${c.id}" ${String(c.id) === String(group) ? raw('selected') : ''}>${c.label} (${c.size})</option>`)}</select>
       <div class="seg" role="group" aria-label="${t('viewMode')}"><button class="${listMode ? '' : 'active'}" id="m-map">${t('map')}</button><button class="${listMode ? 'active' : ''}" id="m-list">${t('list')}</button></div>
-      <select class="select" id="precise" style="width:auto" aria-label="${t('readMode')}" title="${t('readModeHint')}">${['auto', 'on', 'off'].map((m) => html`<option value="${m}" ${(v.preciseMode || 'auto') === m ? raw('selected') : ''}>${t('read_' + m)}</option>`)}</select>
+      <select class="select kg-auto" id="precise" aria-label="${t('readMode')}" title="${t('readModeHint')}">${['auto', 'on', 'off'].map((m) => html`<option value="${m}" ${(v.preciseMode || 'auto') === m ? raw('selected') : ''}>${t('read_' + m)}</option>`)}</select>
       ${v.precise ? html`<span class="badge ok" title="${t('preciseHint')}">${t('precise')}</span>` : ''}
       <span class="small muted right">${t('stats', { nodes: Hostwerk.fmt.number(v.total.nodes), edges: Hostwerk.fmt.number(v.total.edges), groups: v.communities.length, mod: v.modularity })}</span>
     </div>
     <div class="kg-wrap">
       <div class="card card-pad">${listMode ? html`<div id="nodelist" class="kg-scroll"></div>` : html`<canvas id="cv" class="kg-canvas" tabindex="0" aria-label="${t('canvasLabel')}"></canvas>
-        <div class="kg-legend small muted">${v.communities.slice(0, 8).map((c) => html`<span><i class="kg-dot" style="${`background:${KG.color(c.id)}`}"></i>${c.label}</span>`)}</div>`}</div>
+        <div class="kg-legend small muted">${v.communities.slice(0, 8).map((c) => html`<span><i class="kg-dot" style="${`background:${col(c.id)}`}"></i>${c.label}</span>`)}</div>`}</div>
       <div class="card card-pad stack" id="side"></div>
     </div>`);
   $('group').onchange = (e) => { group = e.target.value; focus = null; view = null; sel = null; renderGraph(); };
@@ -117,24 +127,24 @@ async function renderGraph() {
 }
 function renderList() {
   const nodes = view.nodes.slice().sort((a, b) => b.d - a.d).slice(0, 300);
-  Hostwerk.render('#nodelist', html`${nodes.map((n) => html`<button class="list-item" style="width:100%;text-align:left" data-node="${n.id}"><i class="kg-dot" style="${`background:${KG.color(n.c)}`}"></i><span class="grow ellipsis">${n.label}</span><span class="tiny muted">${n.kind} · ${n.d}</span></button>`)}`);
+  Hostwerk.render('#nodelist', html`${nodes.map((n) => html`<button class="list-item kg-full" data-node="${n.id}"><i class="kg-dot" style="${`background:${col(n.c)}`}"></i><span class="grow ellipsis">${n.label}</span><span class="tiny muted">${n.kind} · ${n.d}</span></button>`)}`);
   for (const b of document.querySelectorAll('[data-node]')) b.onclick = () => select(b.dataset.node, false);
 }
 async function renderSide() {
   const side = $('side'); if (!side) return;
   if (!sel) {
     const gods = view.gods.map((id) => view.nodes.find((n) => n.id === id)).filter(Boolean);
-    Hostwerk.render(side, html`<h3 style="margin:0">${t('central')}</h3><p class="small muted" style="margin:0">${t('centralHint')}</p>
-      ${gods.map((n) => html`<button class="list-item" style="width:100%;text-align:left" data-pick="${n.id}"><i class="kg-dot" style="${`background:${KG.color(n.c)}`}"></i><span class="grow ellipsis">${n.label}</span><span class="tiny muted">${n.d}</span></button>`)}`);
+    Hostwerk.render(side, html`<h3 class="kg-m0">${t('central')}</h3><p class="small muted kg-m0">${t('centralHint')}</p>
+      ${gods.map((n) => html`<button class="list-item kg-full" data-pick="${n.id}"><i class="kg-dot" style="${`background:${col(n.c)}`}"></i><span class="grow ellipsis">${n.label}</span><span class="tiny muted">${n.d}</span></button>`)}`);
     for (const b of side.querySelectorAll('[data-pick]')) b.onclick = () => select(b.dataset.pick, true);
     return;
   }
   const n = view.nodes.find((x) => x.id === sel) || { id: sel, label: sel };
-  Hostwerk.render(side, html`<div class="hw-skeleton" style="height:120px"></div>`);
+  Hostwerk.render(side, html`<div class="hw-skeleton kg-skel-s"></div>`);
   try {
     const r = await Hostwerk.post(`/knowledge/${enc(cur)}/explain`, { name: n.id });
     Hostwerk.render(side, html`${md(r.text)}
-      <div class="row-tight" style="flex-wrap:wrap"><button class="btn sm primary" id="s-focus" ${view.focus && view.focus.id === n.id ? raw('disabled') : ''}>${t('focusOn')}</button><button class="btn sm" id="s-ask">${t('askAbout')}</button><button class="btn sm ghost" id="s-from">${t('pathFrom')}</button><button class="btn sm ghost" id="s-close">${t('close')}</button></div>`);
+      <div class="row-tight kg-wrap-row"><button class="btn sm primary" id="s-focus" ${view.focus && view.focus.id === n.id ? raw('disabled') : ''}>${t('focusOn')}</button><button class="btn sm" id="s-ask">${t('askAbout')}</button><button class="btn sm ghost" id="s-from">${t('pathFrom')}</button><button class="btn sm ghost" id="s-close">${t('close')}</button></div>`);
     $('s-focus').onclick = () => setFocus(n.id);
     $('s-ask').onclick = () => { pending.question = n.label; Hostwerk.setTab('ask'); };
     $('s-from').onclick = () => { pending.from = n.label; Hostwerk.setTab('ask'); };
@@ -207,7 +217,7 @@ function draw() {
     const a = pos.get(e[0]); const b = pos.get(e[1]); if (!a || !b) continue;
     const on = sel && (e[0] === sel || e[1] === sel);
     ctx.globalAlpha = sel ? (on ? 0.9 : 0.08) : 0.22;
-    ctx.strokeStyle = on ? KG.color((view.nodes.find((n) => n.id === sel) || {}).c) : line;
+    ctx.strokeStyle = on ? col((view.nodes.find((n) => n.id === sel) || {}).c) : line;
     if (e[3]) ctx.setLineDash([3, 3]); else ctx.setLineDash([]);
     const [x1, y1] = toScreen(a, r); const [x2, y2] = toScreen(b, r);
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
@@ -220,7 +230,7 @@ function draw() {
     if (x < -20 || y < -20 || x > r.width + 20 || y > r.height + 20) continue;
     const dim = sel && n.id !== sel && !near.has(n.id);
     ctx.globalAlpha = dim ? 0.18 : 1;
-    ctx.fillStyle = KG.color(n.c);
+    ctx.fillStyle = col(n.c);
     const rad = radius(n) * (n.id === sel ? 1.6 : 1);
     ctx.beginPath();
     if (n.kind === 'class' || n.kind === 'table' || n.kind === 'type') ctx.rect(x - rad, y - rad, rad * 2, rad * 2);
@@ -250,11 +260,11 @@ async function renderAsk() {
           <label class="label" for="q">${t('question')}</label>
           <textarea class="input" id="q" rows="2" placeholder="${t('questionPlaceholder')}">${pending.question}</textarea>
           <details class="kg-narrow" ${narrow.open ? raw('open') : ''}><summary class="small">${t('narrow')}${narrowCount() ? html` <span class="badge accent">${narrowCount()}</span>` : ''}</summary>
-            <div class="stack" style="gap:8px;margin-top:8px">
-              <div class="row"><label class="grow stack" style="gap:4px"><span class="label">${t('scope')}</span><input class="input" id="nscope" value="${narrow.scope}" placeholder="${t('scopePh')}"></label>
-                <label class="grow stack" style="gap:4px"><span class="label">${t('exclude')}</span><input class="input" id="nexcl" value="${narrow.exclude}" placeholder="${t('excludePh')}"></label></div>
-              <div class="row" style="flex-wrap:wrap;gap:6px 12px"><span class="label">${t('kinds')}</span>${['class', 'function', 'method', 'file', 'doc', 'table', 'note'].map((k) => html`<label class="row-tight small"><input type="checkbox" data-kind="${k}" ${narrow.kinds.includes(k) ? raw('checked') : ''}>${t('kind_' + k)}</label>`)}</div>
-              <div class="row" style="flex-wrap:wrap"><span class="label">${t('depth')}</span><div class="seg" role="group" aria-label="${t('depth')}">${[1, 2, 3].map((d) => html`<button type="button" class="${narrow.depth === d ? 'active' : ''}" data-depth="${d}" aria-pressed="${narrow.depth === d}">${t('step' + d)}</button>`)}</div>
+            <div class="stack kg-gap-2 kg-mt-2">
+              <div class="row"><label class="grow stack kg-gap-1"><span class="label">${t('scope')}</span><input class="input" id="nscope" value="${narrow.scope}" placeholder="${t('scopePh')}"></label>
+                <label class="grow stack kg-gap-1"><span class="label">${t('exclude')}</span><input class="input" id="nexcl" value="${narrow.exclude}" placeholder="${t('excludePh')}"></label></div>
+              <div class="row kg-wrap-row kg-gap-wide"><span class="label">${t('kinds')}</span>${['class', 'function', 'method', 'file', 'doc', 'table', 'note'].map((k) => html`<label class="row-tight small"><input type="checkbox" data-kind="${k}" ${narrow.kinds.includes(k) ? raw('checked') : ''}>${t('kind_' + k)}</label>`)}</div>
+              <div class="row kg-wrap-row"><span class="label">${t('depth')}</span><div class="seg" role="group" aria-label="${t('depth')}">${[1, 2, 3].map((d) => html`<button type="button" class="${narrow.depth === d ? 'active' : ''}" data-depth="${d}" aria-pressed="${narrow.depth === d}">${t('step' + d)}</button>`)}</div>
                 <button type="button" class="btn xs ghost right" id="nreset">${t('narrowReset')}</button></div>
               <span class="tiny muted">${t('narrowHint')}</span>
             </div></details>
@@ -270,7 +280,7 @@ async function renderAsk() {
       <div class="card card-pad stack" id="history"></div>
     </div>`);
   pending.question = ''; pending.from = '';
-  const answer = async (p) => { Hostwerk.render('#answer', html`<div class="hw-skeleton" style="height:140px"></div>`); try { const r = await p; Hostwerk.render('#answer', md(r.text)); loadHistory(); } catch (e) { Hostwerk.render('#answer', html`<p class="c-err">${e.message}</p>`); } };
+  const answer = async (p) => { Hostwerk.render('#answer', html`<div class="hw-skeleton kg-skel-m"></div>`); try { const r = await p; Hostwerk.render('#answer', md(r.text)); loadHistory(); } catch (e) { Hostwerk.render('#answer', html`<p class="c-err">${e.message}</p>`); } };
   const readNarrow = () => { narrow.scope = $('nscope').value.trim(); narrow.exclude = $('nexcl').value.trim(); narrow.kinds = [...document.querySelectorAll('[data-kind]')].filter((x) => x.checked).map((x) => x.dataset.kind); narrow.open = document.querySelector('.kg-narrow').open; Hostwerk.storage.set('narrow', narrow).catch(() => {}); };
   for (const b of document.querySelectorAll('[data-depth]')) b.onclick = () => { readNarrow(); narrow.depth = Number(b.dataset.depth); for (const x of document.querySelectorAll('[data-depth]')) { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); } Hostwerk.storage.set('narrow', narrow).catch(() => {}); };
   $('nreset').onclick = () => { Object.assign(narrow, { scope: '', exclude: '', kinds: [], depth: 1 }); Hostwerk.storage.set('narrow', narrow).catch(() => {}); const q = $('q').value; renderAsk().then(() => { $('q').value = q; document.querySelector('.kg-narrow').open = true; }); };
@@ -285,10 +295,10 @@ async function loadHistory() {
   try {
     const h = await Hostwerk.get(`/knowledge/${enc(s.id)}/questions`);
     Hostwerk.render('#history', html`
-      ${h.unanswered.length ? html`<h3 style="margin:0">${t('openQuestions')}</h3><p class="small muted" style="margin:0">${t('openQuestionsHint')}</p>
+      ${h.unanswered.length ? html`<h3 class="kg-m0">${t('openQuestions')}</h3><p class="small muted kg-m0">${t('openQuestionsHint')}</p>
         ${h.unanswered.map((q) => html`<div class="list-item"><span class="grow">${q}</span><button class="btn xs ghost" data-remember="${q}">${t('remember')}</button></div>`)}` : ''}
-      <h3 style="margin:0">${t('history')}</h3>
-      ${h.questions.length ? html`<div class="kg-scroll">${h.questions.slice(0, 40).map((q) => html`<button class="list-item" style="width:100%;text-align:left" data-again="${q.q}"><span class="grow ellipsis">${q.q}</span><span class="badge ${q.status === 'ok' ? 'ok' : 'warn'}">${q.client || ''}</span><span class="tiny muted">${KG.ago(q.at, lang())}</span></button>`)}</div>` : html`<p class="muted small">${t('noHistory')}</p>`}`);
+      <h3 class="kg-m0">${t('history')}</h3>
+      ${h.questions.length ? html`<div class="kg-scroll">${h.questions.slice(0, 40).map((q) => html`<button class="list-item kg-full" data-again="${q.q}"><span class="grow ellipsis">${q.q}</span><span class="badge ${q.status === 'ok' ? 'ok' : 'warn'}">${q.client || ''}</span><span class="tiny muted">${KG.ago(q.at, lang())}</span></button>`)}</div>` : html`<p class="muted small">${t('noHistory')}</p>`}`);
     for (const b of document.querySelectorAll('[data-again]')) b.onclick = () => { $('q').value = b.dataset.again; $('go').click(); };
     for (const b of document.querySelectorAll('[data-remember]')) b.onclick = () => { pending.memo = b.dataset.remember; Hostwerk.setTab('memory'); };
   } catch { /* egal */ }
@@ -299,7 +309,7 @@ async function renderReport() {
   const s = src(); if (!s || !s.built) return Hostwerk.render('#report', html`<div class="card"><div class="empty"><p>${t('emptyText')}</p></div></div>`);
   try {
     const r = await Hostwerk.get(`/knowledge/${enc(s.id)}/report`);
-    Hostwerk.render('#report', html`<div class="card card-pad"><div class="row" style="margin-bottom:6px"><span class="grow small muted">${t('reportHint')}</span><button class="btn sm ghost" id="copy">${t('copy')}</button></div>${md(r.md)}</div>`);
+    Hostwerk.render('#report', html`<div class="card card-pad"><div class="row kg-mb-2"><span class="grow small muted">${t('reportHint')}</span><button class="btn sm ghost" id="copy">${t('copy')}</button></div>${md(r.md)}</div>`);
     $('copy').onclick = () => Hostwerk.copy(r.md).then(() => Hostwerk.toast(t('copied'), { kind: 'success' }));
   } catch (e) { fail(e); }
 }
@@ -314,18 +324,18 @@ async function renderMemory() {
   const CATS = ['wissen', 'regel', 'vorliebe', 'ziel', 'datei', 'pruefen', 'idee'];
   const areaOf = (m) => (m.cluster === 'ich' ? 'ich' : m.cluster === 'allgemein' ? 'allgemein' : 'projekt');
   // Karten lassen sich in einen anderen Bereich ziehen; ohne Maus: Auswahl „Bereich“ und „Art“ auf jeder Karte
-  const card = (m) => html`<div class="list-item kg-card" draggable="true" data-drag="${m.id}" style="align-items:flex-start">
-      <div class="grow" style="min-width:0"><b>${m.text}</b>${m.detail ? html`<div class="small muted">${m.detail}</div>` : ''}
-        <div class="row-tight" style="margin-top:4px;flex-wrap:wrap">
-          <select class="select sm" data-area="${m.id}" aria-label="${t('area')}" style="width:auto">${['ich', 'allgemein', 'projekt'].map((a) => html`<option value="${a}" ${areaOf(m) === a ? raw('selected') : ''}>${t('area.' + a)}</option>`)}</select>
-          <select class="select sm" data-cat="${m.id}" aria-label="${t('kind')}" style="width:auto">${CATS.map((c) => html`<option value="${c}" ${m.cat === c ? raw('selected') : ''}>${t('cat.' + c)}</option>`)}</select>
+  const card = (m) => html`<div class="list-item kg-card kg-top" draggable="true" data-drag="${m.id}">
+      <div class="grow kg-min0"><b>${m.text}</b>${m.detail ? html`<div class="small muted">${m.detail}</div>` : ''}
+        <div class="row-tight kg-mt-1 kg-wrap-row">
+          <select class="select sm kg-auto" data-area="${m.id}" aria-label="${t('area')}">${['ich', 'allgemein', 'projekt'].map((a) => html`<option value="${a}" ${areaOf(m) === a ? raw('selected') : ''}>${t('area.' + a)}</option>`)}</select>
+          <select class="select sm kg-auto" data-cat="${m.id}" aria-label="${t('kind')}">${CATS.map((c) => html`<option value="${c}" ${m.cat === c ? raw('selected') : ''}>${t('cat.' + c)}</option>`)}</select>
         </div>
       </div>
       <span class="badge ${m.source === 'claude' ? 'accent' : ''}">${SRC[m.source] || m.source}</span>
       <button class="btn xs ghost" data-edit="${m.id}">${t('edit')}</button><button class="btn xs ghost danger" data-del="${m.id}">${t('delete')}</button>
     </div>`;
-  const item = (m) => html`<div class="list-item" style="align-items:flex-start">
-      <div class="grow" style="min-width:0"><b>${m.text}</b>${m.detail ? html`<div class="small muted">${m.detail}</div>` : ''}${m.links.length ? html`<div class="tiny muted">${t('about')}: ${m.links.join(', ')}</div>` : ''}</div>
+  const item = (m) => html`<div class="list-item kg-top">
+      <div class="grow kg-min0"><b>${m.text}</b>${m.detail ? html`<div class="small muted">${m.detail}</div>` : ''}${m.links.length ? html`<div class="tiny muted">${t('about')}: ${m.links.join(', ')}</div>` : ''}</div>
       <span class="badge ${m.source === 'claude' ? 'accent' : ''}">${SRC[m.source] || m.source}</span>
       ${!m.confirmed ? html`<button class="btn xs primary" data-ok="${m.id}">${t('confirm')}</button>` : ''}
       <button class="btn xs ghost" data-edit="${m.id}">${t('edit')}</button><button class="btn xs ghost danger" data-del="${m.id}">${t('delete')}</button>
@@ -333,8 +343,8 @@ async function renderMemory() {
   Hostwerk.render('#memory', html`
     <div class="grid grid-2">
       <div class="stack">
-        ${review.length ? html`<div class="card card-pad stack"><h3 style="margin:0">${t('review')}</h3><p class="small muted" style="margin:0">${t('reviewHint')}</p>${review.map(item)}</div>` : ''}
-        <div class="card card-pad stack"><h3 style="margin:0">${t('memoryAll')}</h3><p class="small muted" style="margin:0">${t('dragHint')}</p>
+        ${review.length ? html`<div class="card card-pad stack"><h3 class="kg-m0">${t('review')}</h3><p class="small muted kg-m0">${t('reviewHint')}</p>${review.map(item)}</div>` : ''}
+        <div class="card card-pad stack"><h3 class="kg-m0">${t('memoryAll')}</h3><p class="small muted kg-m0">${t('dragHint')}</p>
           ${list.length ? html`<div class="kg-areas">${['ich', 'allgemein', 'projekt'].map((a) => html`<div class="kg-area" data-drop="${a}"><div class="tiny bold muted">${t('area.' + a)}</div>${list.filter((m) => m.confirmed && areaOf(m) === a).map(card)}</div>`)}</div>` : html`<p class="muted small">${t('memoryEmpty')}</p>`}
         </div>
       </div>
@@ -357,11 +367,11 @@ async function renderMemory() {
 }
 function memForm(m) {
   const s = src();
-  Hostwerk.render('#memform', html`<h3 style="margin:0">${m ? t('editEntry') : t('newEntry')}</h3>
+  Hostwerk.render('#memform', html`<h3 class="kg-m0">${m ? t('editEntry') : t('newEntry')}</h3>
     <label class="label" for="mt">${t('entryText')}</label><input class="input" id="mt" value="${m ? m.text : pending.memo || ''}">
     <label class="label" for="md">${t('entryDetail')}</label><textarea class="input" id="md" rows="3">${m ? m.detail || '' : ''}</textarea>
     <label class="label" for="ml">${t('entryLinks')}</label><input class="input" id="ml" value="${m ? m.links.join(', ') : ''}" placeholder="LiveUpdate.deploy, server/minecraft/manager.js">
-    <p class="tiny muted" style="margin:0">${t('noSecrets')}</p>
+    <p class="tiny muted kg-m0">${t('noSecrets')}</p>
     <div class="row"><span class="grow"></span>${m ? html`<button class="btn ghost" id="mcancel">${t('cancel')}</button>` : ''}<button class="btn primary" id="msave">${t('save')}</button></div>`);
   pending.memo = '';
   if ($('mcancel')) $('mcancel').onclick = () => memForm(null);
@@ -380,24 +390,24 @@ async function renderObsidian() {
     <div class="grid grid-2">
       <div class="stack">
         <div class="card card-pad stack">
-          <h3 style="margin:0">${t('obsExport')}</h3><p class="small muted" style="margin:0">${t('obsExportHint')}</p>
+          <h3 class="kg-m0">${t('obsExport')}</h3><p class="small muted kg-m0">${t('obsExportHint')}</p>
           <div class="row"><input class="input mono" id="od" value="${o.exportDir || ''}" placeholder="${t('obsFolder')}" aria-label="${t('obsFolder')}"><button class="btn" id="odp">${t('choose')}</button></div>
           <div class="row"><span class="grow"></span><button class="btn primary" id="oexp" ${s.built ? '' : raw('disabled')}>${t('obsExportBtn')}</button></div>
           <div id="ores"></div>
         </div>
         <div class="card card-pad stack">
-          <h3 style="margin:0">${t('obsSync')}</h3><p class="small muted" style="margin:0">${t('obsSyncHint')}</p>
+          <h3 class="kg-m0">${t('obsSync')}</h3><p class="small muted kg-m0">${t('obsSyncHint')}</p>
           <div class="row"><span class="grow"></span><button class="btn" id="osync" ${o.exportDir ? '' : raw('disabled')}>${t('obsSyncBtn')}</button></div>
         </div>
       </div>
       <div class="stack">
         <div class="card card-pad stack">
-          <h3 style="margin:0">${t('obsVaults')}</h3><p class="small muted" style="margin:0">${t('obsVaultsHint')}</p>
+          <h3 class="kg-m0">${t('obsVaults')}</h3><p class="small muted kg-m0">${t('obsVaultsHint')}</p>
           ${(o.vaults || []).map((v, i) => html`<div class="list-item"><span class="grow ellipsis mono small">${v.path}</span><button class="btn xs ghost" data-vrm="${i}">${t('remove')}</button></div>`)}
           <div class="row"><span class="grow"></span><button class="btn" id="vadd">${t('obsAddVault')}</button></div>
         </div>
         <div class="card card-pad stack">
-          <h3 style="margin:0">${t('obsImport')}</h3><p class="small muted" style="margin:0">${t('obsImportHint')}</p>
+          <h3 class="kg-m0">${t('obsImport')}</h3><p class="small muted kg-m0">${t('obsImportHint')}</p>
           <div class="row"><span class="grow"></span><button class="btn" id="iload">${t('obsPickVault')}</button></div>
           <div id="inotes"></div>
         </div>
@@ -406,7 +416,7 @@ async function renderObsidian() {
   $('odp').onclick = async () => { const d = await Hostwerk.pickFolder(t('obsFolder')).catch(() => null); if (d) $('od').value = d; };
   $('oexp').onclick = async () => {
     const dir = $('od').value.trim(); if (!dir) return Hostwerk.toast(t('obsFolder'), { kind: 'warn' });
-    Hostwerk.render('#ores', html`<div class="hw-skeleton" style="height:60px"></div>`);
+    Hostwerk.render('#ores', html`<div class="hw-skeleton kg-skel-xs"></div>`);
     try {
       const r = await Hostwerk.post(`/knowledge/${enc(s.id)}/obsidian/export`, { dir });
       Hostwerk.render('#ores', html`<div class="callout ok"><div class="callout-body">${t('obsDone', { written: r.written, removed: r.removed })}${r.kept.length ? html`<div class="small">${t('obsKept', { n: r.kept.length })}</div>` : ''}<div class="mono tiny">${r.dir}</div></div></div><button class="btn sm" id="oopen">${t('obsOpen')}</button>`);
@@ -436,12 +446,12 @@ async function renderClaude() {
   try { c = await Hostwerk.get(`/knowledge/${enc(s.id)}/claude`); } catch (e) { fail(e); }
   const has = (name) => c.items.some((x) => x.path.endsWith(name));
   Hostwerk.render('#claude', html`
-    ${!st.mcp.connected ? html`<div class="callout warn" style="margin-bottom:14px"><div class="callout-body"><b class="callout-title">${t('mcpOff')}</b>${t('mcpOffText')}</div><button class="btn sm" id="tomcp">${t('mcpConnect')}</button></div>` : ''}
+    ${!st.mcp.connected ? html`<div class="callout warn kg-mb-4"><div class="callout-body"><b class="callout-title">${t('mcpOff')}</b>${t('mcpOffText')}</div><button class="btn sm" id="tomcp">${t('mcpConnect')}</button></div>` : ''}
     <div class="grid grid-2">
       <div class="stack">
         <div class="card card-pad stack">
-          <div class="card-head" style="padding:0;border:0"><h3>${t('connectTitle')}</h3>${c.connected ? html`<span class="badge ${c.ok ? 'ok' : 'warn'}">${c.ok ? t('connected') : t('needsRepair')}</span>` : html`<span class="badge">${t('notConnected')}</span>`}</div>
-          <p class="small muted" style="margin:0">${t('connectHint')}</p>
+          <div class="card-head kg-bare"><h3>${t('connectTitle')}</h3>${c.connected ? html`<span class="badge ${c.ok ? 'ok' : 'warn'}">${c.ok ? t('connected') : t('needsRepair')}</span>` : html`<span class="badge">${t('notConnected')}</span>`}</div>
+          <p class="small muted kg-m0">${t('connectHint')}</p>
           <label class="kg-check"><input type="checkbox" id="cmd" ${!c.connected || has('CLAUDE.md') ? raw('checked') : ''}><span><b>CLAUDE.md</b><div class="small muted">${t('optClaudeMd')}</div></span></label>
           <label class="kg-check"><input type="checkbox" id="cag" ${has('AGENTS.md') ? raw('checked') : ''}><span><b>AGENTS.md</b><div class="small muted">${t('optAgents')}</div></span></label>
           <label class="kg-check"><input type="checkbox" id="csk" ${!c.connected || has('SKILL.md') ? raw('checked') : ''}><span><b>Skill</b><div class="small muted">${t('optSkill')}</div></span></label>
@@ -455,8 +465,8 @@ async function renderClaude() {
       </div>
       <div class="stack">
         <div class="card card-pad stack">
-          <h3 style="margin:0">${t('forgetTitle')}</h3>
-          <p class="small muted" style="margin:0">${t('forgetHint')}</p>
+          <h3 class="kg-m0">${t('forgetTitle')}</h3>
+          <p class="small muted kg-m0">${t('forgetHint')}</p>
           <label class="kg-check"><input type="checkbox" id="fdata" checked><span>${t('forgetData')}</span></label>
           <label class="kg-check"><input type="checkbox" id="fmem"><span>${t('forgetMemory')}</span></label>
           <label class="kg-check"><input type="checkbox" id="fobs"><span>${t('forgetObsidian')}</span></label>
@@ -464,8 +474,8 @@ async function renderClaude() {
           <div id="fres"></div>
         </div>
         <div class="card card-pad stack">
-          <h3 style="margin:0">${t('safetyTitle')}</h3>
-          <ul class="small" style="margin:0;padding-left:18px">${['safety1', 'safety2', 'safety3', 'safety4', 'safety5'].map((k) => html`<li>${t(k)}</li>`)}</ul>
+          <h3 class="kg-m0">${t('safetyTitle')}</h3>
+          <ul class="small kg-m0 kg-indent">${['safety1', 'safety2', 'safety3', 'safety4', 'safety5'].map((k) => html`<li>${t(k)}</li>`)}</ul>
         </div>
       </div>
     </div>`);
@@ -489,14 +499,23 @@ function show(next) {
   for (const el of document.querySelectorAll('[data-tab]')) el.hidden = el.dataset.tab !== tab;
   if (!st) return;
   const fn = { graph: renderGraph, ask: renderAsk, report: renderReport, memory: renderMemory, obsidian: renderObsidian, claude: renderClaude }[tab];
-  if (fn) Promise.resolve(fn()).catch(fail);
+  if (fn) Promise.resolve(fn()).catch((e) => showError('#' + tab, e));
+  if (Hostwerk.embed === 'tab') for (const b of document.querySelectorAll('[data-view]')) { b.classList.toggle('active', b.dataset.view === tab); b.setAttribute('aria-pressed', String(b.dataset.view === tab)); }
 }
+async function retry() {
+  try { await loadStatus(); show(tab); } catch (e) { showError('#' + tab, e); }
+}
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-retry]')) { retry(); return; }
+  const v = e.target.closest('[data-view]');
+  if (v) show(v.dataset.view);
+});
 Hostwerk.ready().then(async (info) => {
   tab = info.tab || 'graph';
   Hostwerk.on('tab', show);
-  Hostwerk.on('theme', () => draw());
+  Hostwerk.on('theme', () => { pal = null; if (tab === 'graph') show(tab); else draw(); });
   Hostwerk.on('lang', () => { loadStatus().then(() => show(tab)).catch(fail); });
   try { const n = await Hostwerk.storage.get('narrow'); if (n && typeof n === 'object') Object.assign(narrow, n); } catch { /* egal */ }
-  try { await loadStatus(); } catch (e) { fail(e); }
+  try { await loadStatus(); } catch (e) { for (const el of document.querySelectorAll('[data-tab]')) el.hidden = el.dataset.tab !== tab; showError('#' + tab, e); return; }
   show(tab);
 });

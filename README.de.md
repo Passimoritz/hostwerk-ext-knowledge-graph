@@ -4,7 +4,7 @@
 
 Macht aus deinen Projekten (Code, Doku, Obsidian-Notizen) einen durchsuchbaren Wissensgraphen – für dich und für Claude. Claude fragt den Graphen, statt Dateien zu durchsuchen, lernt dazu und lässt sich jederzeit spurlos wieder trennen.
 
-Eine offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erweiterung (SDK 2.3). Der Motor läuft in Hostwerk, ganz auf deinem Rechner: Zum Bauen des Graphen braucht es weder KI noch Internet. Diese Erweiterung ist die Oberfläche dazu.
+Eine offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erweiterung. Der Motor läuft in Hostwerk, ganz auf deinem Rechner: Zum Bauen des Graphen braucht es weder KI noch Internet. Diese Erweiterung ist die Oberfläche dazu.
 
 ## Was du bekommst
 
@@ -45,6 +45,15 @@ Eine offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erwei
 - **Pausieren:** Claude bekommt nur den kurzen Hinweis „pausiert“ und arbeitet wie gewohnt. Nichts wird gelöscht.
 - **Kurze Antworten:** Antworten an Claude sind begrenzt, damit sein Kontext nicht vollläuft. Geheimnisse werden abgelehnt.
 
+## Wo du sie findest
+
+- In der Seitenleiste unter *Entwickeln*, direkt nach *Projekte*, mit den Reitern Graph, Fragen, Bericht, Gedächtnis, Obsidian und Claude
+- Als Reiter **Wissensgraph** in Hostwerks Bereich *Projekte* (mit eigener Ansichtswahl)
+- Tastenkürzel **Strg+Alt+G** (Graph) und **Strg+Alt+K** (Fragen) – änderbar unter Einstellungen → Allgemein → Tastenkürzel
+- Die Gruppenfarben folgen Hostwerks Akzentfarbe und Hell/Dunkel
+- Ladefehler zeigen eine Meldung mit *Erneut versuchen*
+- Die Erweiterung „Claude“ darf hier Reiter, Aktionen und Einstellungen ergänzen, alle anderen Reiter (`allowExtensions`)
+
 ## Berechtigungen
 
 | Berechtigung | Wofür |
@@ -52,5 +61,6 @@ Eine offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erwei
 | `read:knowledge` | Projekte, Graph, Bericht, Fragenverlauf, Gedächtnis und Claude-Status lesen |
 | `change:knowledge` | Graph bauen und abfragen, Ordner aufnehmen, Gedächtnis pflegen, Obsidian-Export. Das betrifft nur die eigenen Daten des Graphen, deshalb ohne Rückfrage je Aufruf. |
 | `connect:claude` | Abschnitt/Skill ins Projekt schreiben und wieder vergessen. Hostwerk fragt vorher. |
+| `storage` | Merkt sich das gewählte Projekt und die Such-Einstellungen |
 
 Lizenz: MIT

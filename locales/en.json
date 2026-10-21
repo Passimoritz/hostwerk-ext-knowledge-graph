@@ -166,5 +166,14 @@
   "read_off": "Reading: fast",
   "precise": "precise",
   "preciseHint": "Read with tree-sitter: definitions and calls from the real syntax tree.",
-  "readModeSaved": "Saved – the graph is rebuilt"
+  "readModeSaved": "Saved – the graph is rebuilt",
+  "errorTitle": "Couldn't load this",
+  "retry": "Try again",
+  "views": "View",
+  "view.graph": "Graph",
+  "view.ask": "Ask",
+  "view.report": "Report",
+  "view.memory": "Memory",
+  "view.obsidian": "Obsidian",
+  "view.claude": "Claude"
 }

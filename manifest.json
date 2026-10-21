@@ -138,13 +138,61 @@
           "en": "Ask the question"
         }
       }
-    ]
+    ],
+    "nav": {
+      "group": "develop",
+      "after": "projects"
+    }
   },
-  "version": "1.4.1",
+  "version": "1.5.0",
   "author": "Hostwerk",
   "homepage": "https://github.com/Passimoritz/hostwerk-ext-knowledge-graph",
   "license": "MIT",
   "icon": "icon.svg",
   "banner": "banner.svg",
-  "hostwerk": ">=2.9.0"
+  "hostwerk": ">=2.9.0",
+  "contributes": {
+    "tabs": [
+      {
+        "id": "graph",
+        "on": "area:projects",
+        "title": {
+          "de": "Wissensgraph",
+          "en": "Knowledge graph"
+        },
+        "icon": "network",
+        "file": "page/index.html"
+      }
+    ],
+    "shortcuts": [
+      {
+        "id": "open-graph",
+        "title": {
+          "de": "Wissensgraph öffnen",
+          "en": "Open the knowledge graph"
+        },
+        "keys": "ctrl+alt+g",
+        "action": "graph"
+      },
+      {
+        "id": "ask",
+        "title": {
+          "de": "Den Wissensgraphen fragen",
+          "en": "Ask the knowledge graph"
+        },
+        "keys": "ctrl+alt+k",
+        "action": "ask"
+      }
+    ]
+  },
+  "allowExtensions": {
+    "claude": [
+      "tabs",
+      "actions",
+      "settings"
+    ],
+    "*": [
+      "tabs"
+    ]
+  }
 }

@@ -63,3 +63,15 @@ test('Fokus-Ansicht: Mitte, Ringe nach Schritten, deterministisch', () => {
   assert.ok(Math.abs(r('a') - r('b')) < 1e-9 && r('x') > r('a') && r('x') <= 0.951);
   assert.deepStrictEqual([...KG.radial(nodes, dist).entries()], [...p.entries()]);
 });
+
+test('Gruppenfarben folgen Akzent und Hell/Dunkel', () => {
+  const dark = KG.palette('#7c5cff', 'dark'); const light = KG.palette('#7c5cff', 'light');
+  assert.strictEqual(dark.colors.length, 12);
+  assert.match(dark.colors[0], /^hsl\(252 /); // Startton = Akzent
+  assert.notStrictEqual(dark.colors[0], light.colors[0]); // hell dunkler, dunkel heller
+  assert.match(light.colors[0], / 40%\)$/); assert.match(dark.colors[0], / 64%\)$/);
+  assert.strictEqual(new Set(dark.colors).size, 12);
+  assert.match(KG.palette('rgb(16, 185, 129)', 'dark').colors[0], /^hsl\(160 /);
+  assert.strictEqual(KG.color(-1, dark), dark.none);
+  assert.strictEqual(KG.color(3), KG.PALETTE[3]); // ohne Palette: Rückfall
+});

@@ -1,3 +1,12 @@
+## 1.5.0
+
+- Group colours follow Hostwerk's accent and light/dark mode instead of a fixed palette. / Gruppenfarben folgen Hostwerks Akzent und Hell/Dunkel statt einer festen Palette.
+- Real shortcuts (Ctrl+Alt+G graph, Ctrl+Alt+K ask) through `contributes.shortcuts`. / Echte Tastenkürzel (Strg+Alt+G Graph, Strg+Alt+K Fragen) über `contributes.shortcuts`.
+- Tab “Knowledge graph” in Hostwerk's Projects area, with its own view switcher. / Reiter „Wissensgraph“ im Bereich Projekte, mit eigener Ansichtswahl.
+- Sidebar under Develop after Projects (`page.nav`); “Claude” may add tabs, actions and settings, everyone else tabs (`allowExtensions`). / Seitenleiste unter Entwickeln nach Projekte (`page.nav`); „Claude“ darf Reiter, Aktionen und Einstellungen ergänzen, alle anderen Reiter (`allowExtensions`).
+- Loading errors with “Try again” instead of an endless skeleton; design scale instead of fixed pixels. / Ladefehler mit „Erneut versuchen“ statt ewigem Skelett; Design-Skala statt fester Pixel.
+- Release package contains everything except the repository tooling. / Release-Paket enthält alles außer dem Repo-Werkzeug.
+
 ## 1.4.1
 
 - Remembers the chosen project and the search options again (permission "storage" was missing – Hostwerk declined it with a warning). / Merkt sich das gewählte Projekt und die Such-Einstellungen wieder (Recht „storage“ fehlte – Hostwerk hat es mit einer Warnung abgelehnt).
