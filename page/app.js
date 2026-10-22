@@ -460,7 +460,7 @@ async function renderClaude() {
           ${c.items.length ? html`<div class="small muted">${t('writtenFiles')}</div>${c.items.map((x) => html`<div class="kg-path">${x.path}</div>`)}` : ''}
         </div>
         <div class="card card-pad stack">
-          <div class="setting-row"><div class="txt"><b>${t('pause')}</b><span>${t('pauseHint')}</span></div><label class="switch"><input type="checkbox" id="pz" ${st.paused ? raw('checked') : ''}><span class="track"></span><span class="thumb"></span></label></div>
+          <div class="setting-row"><div class="txt"><b>${t('pause')}</b><span>${t('pauseHint')}</span></div><label class="switch"><input type="checkbox" id="pz" aria-label="${t('pause')}" ${st.paused ? raw('checked') : ''}><span class="track"></span><span class="thumb"></span></label></div>
         </div>
       </div>
       <div class="stack">
