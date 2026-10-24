@@ -1,3 +1,7 @@
+## 1.5.3
+
+- New animated icon and banner in the common Hostwerk style (isometric block). / Neues animiertes Symbol und Banner im gemeinsamen Hostwerk-Stil (isometrischer Block).
+
 ## 1.5.2
 
 - The pause switch has a name for screen readers / Der Pause-Schalter hat einen Namen für Bildschirmleser
