@@ -4,9 +4,13 @@
 
 Macht aus deinen Projekten (Code, Doku, Obsidian-Notizen) einen durchsuchbaren Wissensgraphen – für dich und für Claude. Claude fragt den Graphen, statt Dateien zu durchsuchen, lernt dazu und lässt sich jederzeit spurlos wieder trennen.
 
-Eine offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erweiterung. Der Motor läuft in Hostwerk, ganz auf deinem Rechner: Zum Bauen des Graphen braucht es weder KI noch Internet. Diese Erweiterung ist die Oberfläche dazu.
+[English](README.md) · Offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erweiterung (läuft abgeschottet, ab Hostwerk 2.9)
 
-## Was du bekommst
+![Bildschirmfoto](docs/screenshot.de.png)
+
+Der Motor läuft in Hostwerk, ganz auf deinem Rechner: Zum Bauen des Graphen braucht es weder KI noch Internet. Diese Erweiterung ist die Oberfläche dazu.
+
+## Was sie kann
 
 - **Wo:** Projekte → Wissensgraph – seit 1.5.1 ohne eigenen Seitenleisten-Eintrag; die ganze Seite bleibt unter Erweiterungen → Öffnen
 - **Graph:** Klassen, Funktionen, Methoden, Dateien, Doku, SQL-Tabellen und Begründungen aus Kommentaren (`WHY:`, `NOTE:`, `ADR-…`).
@@ -55,6 +59,12 @@ Eine offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erwei
 - Ladefehler zeigen eine Meldung mit *Erneut versuchen*
 - Die Erweiterung „Claude“ darf hier Reiter, Aktionen und Einstellungen ergänzen, alle anderen Reiter (`allowExtensions`)
 
+## Installieren
+
+In Hostwerk: **Erweiterungen → Entdecken** und „Installieren“ klicken. Oder von Hand: die Zip-Datei aus dem [neuesten Release](../../releases/latest) laden → *Erweiterungen → Hinzufügen → Datei*.
+
+Sie läuft abgeschottet in Hostwerk – sie bekommt nur die Rechte, die sie nennt, und Hostwerk zeigt sie vor dem Installieren.
+
 ## Berechtigungen
 
 | Berechtigung | Wofür |
@@ -64,4 +74,10 @@ Eine offizielle [Hostwerk](https://github.com/Passimoritz/hostwerk-public)-Erwei
 | `connect:claude` | Abschnitt/Skill ins Projekt schreiben und wieder vergessen. Hostwerk fragt vorher. |
 | `storage` | Merkt sich das gewählte Projekt und die Such-Einstellungen |
 
-Lizenz: MIT
+## Entwickeln
+
+Logik in `page/lib.js` (ohne DOM). Tests: `node --test tests/*.test.js`. Prüfung: `node check.js . --strict` (Hostwerk-SDK). Der Motor steckt in Hostwerk (`server/services/knowledge/`), mit eigenen Tests in `scripts/knowledge-test.js`.
+
+## Lizenz
+
+MIT

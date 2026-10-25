@@ -4,9 +4,13 @@
 
 Turns your projects (code, docs, Obsidian notes) into a searchable knowledge graph, for you and for Claude. Claude asks the graph instead of searching through files, learns along the way, and can be disconnected again at any time without leaving traces.
 
-An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension. The engine runs inside Hostwerk, entirely on your computer: no AI and no internet are needed to build the graph. This extension is its interface.
+[Deutsch](README.de.md) · An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension (runs sandboxed, Hostwerk 2.9 or newer)
 
-## What you get
+![Screenshot](docs/screenshot.png)
+
+The engine runs inside Hostwerk, entirely on your computer: no AI and no internet are needed to build the graph. This extension is its interface.
+
+## What it does
 
 - **Where:** Projects → Knowledge graph – no own sidebar entry since 1.5.1; the full page stays under Extensions → Open
 - **Graph:** classes, functions, methods, files, docs, SQL tables and rationale comments (`WHY:`, `NOTE:`, `ADR-…`).
@@ -55,6 +59,12 @@ An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension
 - Loading errors show a message with *Try again*
 - The extension “Claude” may add tabs, actions and settings here, every other extension tabs (`allowExtensions`)
 
+## Install
+
+In Hostwerk: **Extensions → Discover** and click “Install”. Or manually: download the zip from the [latest release](../../releases/latest) → *Extensions → Add → File*.
+
+It runs sandboxed in Hostwerk – it only gets the permissions it lists, and Hostwerk shows them before installing.
+
 ## Permissions
 
 | Permission | Why |
@@ -68,4 +78,6 @@ An official [Hostwerk](https://github.com/Passimoritz/hostwerk-public) extension
 
 Logic in `page/lib.js` (no DOM). Tests: `node --test tests/*.test.js`. Check: `node check.js . --strict` (Hostwerk SDK). The engine is in Hostwerk (`server/services/knowledge/`), with its own tests in `scripts/knowledge-test.js`.
 
-License: MIT
+## License
+
+MIT
