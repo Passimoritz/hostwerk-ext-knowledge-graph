@@ -1,3 +1,7 @@
+## 1.6.0
+
+- The knowledge memory is now the layer “Knowledge” in AI → Settings → Memory (Hostwerk with SDK 3.10) – pick a project, check and edit what the AI knows, “Open graph” leads to the full view. The graph view stays under Projects. Older Hostwerk versions keep 1.5 (`sdkVersion` 3.10). / Das Wissens-Gedächtnis ist jetzt die Ebene „Wissen“ in KI → Einstellungen → Gedächtnis (Hostwerk mit SDK 3.10) – Projekt wählen, prüfen und bearbeiten, was die KI weiß; „Graph öffnen“ führt zur ganzen Ansicht. Die Graph-Ansicht bleibt unter Projekte. Ältere Hostwerk-Versionen behalten 1.5 (`sdkVersion` 3.10).
+
 ## 1.5.3
 
 - New animated icon and banner in the common Hostwerk style (isometric block). / Neues animiertes Symbol und Banner im gemeinsamen Hostwerk-Stil (isometrischer Block).

@@ -12,7 +12,7 @@ Der Motor läuft in Hostwerk, ganz auf deinem Rechner: Zum Bauen des Graphen bra
 
 ## Was sie kann
 
-- **Wo:** Projekte → Wissensgraph – seit 1.5.1 ohne eigenen Seitenleisten-Eintrag; die ganze Seite bleibt unter Erweiterungen → Öffnen
+- **Wo:** Projekte → Wissensgraph – seit 1.5.1 ohne eigenen Seitenleisten-Eintrag; die ganze Seite bleibt unter Erweiterungen → Öffnen. Seit 1.6.0 (Hostwerk mit SDK 3.10) außerdem als Ebene **Wissen** in KI → Einstellungen → Gedächtnis
 - **Graph:** Klassen, Funktionen, Methoden, Dateien, Doku, SQL-Tabellen und Begründungen aus Kommentaren (`WHY:`, `NOTE:`, `ADR-…`).
   - **Verbindungen:** Aufrufe, Importe, Vererbung, Verweise zwischen Dokumenten, Fremdschlüssel.
   - **Sicherheit:** Jede Verbindung ist markiert: `EXTRACTED` (steht so im Quelltext) oder `INFERRED` (über den Namen aufgelöst). Mehrdeutiges wird gezählt, nie geraten.

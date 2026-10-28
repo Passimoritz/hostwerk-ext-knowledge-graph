@@ -45,11 +45,13 @@ function renderHead() {
     <label class="label" for="pick">${t('project')}</label>
     <select class="select" id="pick">${st.sources.map((x) => html`<option value="${x.id}" ${x.id === cur ? raw('selected') : ''}>${x.name}${x.kind === 'folder' ? (x.vault ? ' (Obsidian)' : ` (${t('folder')})`) : ''}</option>`)}</select>
     <button class="btn sm ghost" id="addFolder">${t('addFolder')}</button>
-    ${s ? html`<span class="small muted">${s.built ? t('builtAgo', { when: KG.ago(s.builtAt, lang()) }) : t('notBuilt')}</span>
+    ${Hostwerk.embed === 'section' ? html`<button class="btn sm ghost" id="openGraph">${t('openGraph')}</button>` : ''}
+    ${s ?html`<span class="small muted">${s.built ? t('builtAgo', { when: KG.ago(s.builtAt, lang()) }) : t('notBuilt')}</span>
       <div class="right row-tight">${st.paused ? html`<span class="badge warn">${t('paused')}</span>` : ''}<button class="btn sm ${s.built ? 'ghost' : 'primary'}" id="build" ${building ? raw('disabled') : ''}>${building ? t('building') : s.built ? t('update') : t('build')}</button></div>` : ''}`);
   const pick = $('pick');
   if (pick) pick.onchange = () => { cur = pick.value; sel = null; view = null; focus = null; Hostwerk.storage.set('project', cur).catch(() => {}); renderHead(); show(tab); };
   $('addFolder').onclick = addFolder;
+  if ($('openGraph')) $('openGraph').onclick = () => Hostwerk.navigate('/ext/knowledge-graph').catch(fail);
   if ($('build')) $('build').onclick = () => build(false);
 }
 async function addFolder() {
@@ -495,7 +497,8 @@ async function renderClaude() {
 
 /* ---------------- Reiter ---------------- */
 function show(next) {
-  tab = next || 'graph';
+  // Als Ebene „Wissen“ im KI-Gedächtnis (Hostwerk mit SDK 3.10, contributes.sections on ai.memory): nur das Gedächtnis
+  tab = Hostwerk.embed === 'section' ? 'memory' : next || 'graph';
   for (const el of document.querySelectorAll('[data-tab]')) el.hidden = el.dataset.tab !== tab;
   if (!st) return;
   const fn = { graph: renderGraph, ask: renderAsk, report: renderReport, memory: renderMemory, obsidian: renderObsidian, claude: renderClaude }[tab];
@@ -511,7 +514,7 @@ document.addEventListener('click', (e) => {
   if (v) show(v.dataset.view);
 });
 Hostwerk.ready().then(async (info) => {
-  tab = info.tab || 'graph';
+  tab = info.embed === 'section' ? 'memory' : info.tab || 'graph';
   Hostwerk.on('tab', show);
   Hostwerk.on('theme', () => { pal = null; if (tab === 'graph') show(tab); else draw(); });
   Hostwerk.on('lang', () => { loadStatus().then(() => show(tab)).catch(fail); });

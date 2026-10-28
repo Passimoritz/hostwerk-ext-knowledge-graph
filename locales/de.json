@@ -175,5 +175,6 @@
   "view.report": "Bericht",
   "view.memory": "Gedächtnis",
   "view.obsidian": "Obsidian",
-  "view.claude": "Claude"
+  "view.claude": "Claude",
+  "openGraph": "Graph öffnen"
 }

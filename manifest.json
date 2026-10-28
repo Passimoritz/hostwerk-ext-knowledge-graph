@@ -141,13 +141,14 @@
     ],
     "nav": false
   },
-  "version": "1.5.3",
+  "version": "1.6.0",
   "author": "Hostwerk",
   "homepage": "https://github.com/Passimoritz/hostwerk-ext-knowledge-graph",
   "license": "MIT",
   "icon": "icon.svg",
   "banner": "banner.svg",
-  "hostwerk": ">=2.9.0",
+  "hostwerk": ">=3.1.0",
+  "sdkVersion": "3.10",
   "contributes": {
     "tabs": [
       {
@@ -179,6 +180,18 @@
         },
         "keys": "ctrl+alt+k",
         "action": "ask"
+      }
+    ],
+    "sections": [
+      {
+        "id": "knowledge",
+        "on": "ai.memory",
+        "title": {
+          "de": "Wissen",
+          "en": "Knowledge"
+        },
+        "icon": "network",
+        "file": "page/index.html"
       }
     ]
   },
