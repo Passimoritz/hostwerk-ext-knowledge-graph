@@ -13,6 +13,8 @@
   "noProjectsText": "Leg in Hostwerk ein Projekt an oder füge einen Ordner hinzu – zum Beispiel einen Obsidian-Tresor.",
   "emptyTitle": "Noch kein Graph für dieses Projekt",
   "emptyText": "Hostwerk liest Code, Doku und Notizen ein und baut daraus den Graphen. Das dauert meist nur Sekunden und läuft ganz auf deinem Rechner.",
+  "graphEmptyTitle": "Nichts zum Einlesen gefunden",
+  "graphEmptyText": "In diesem Ordner gibt es (noch) keine Dateien, die Hostwerk liest – Code, Markdown-Doku, Notizen oder SQL. Leg welche an und aktualisiere dann.",
   "findPlaceholder": "Klasse, Funktion oder Datei suchen …",
   "group": "Gruppe",
   "allGroups": "Alle Gruppen",
@@ -176,5 +178,17 @@
   "view.memory": "Gedächtnis",
   "view.obsidian": "Obsidian",
   "view.claude": "Claude",
-  "openGraph": "Graph öffnen"
+  "openGraph": "Graph öffnen",
+  "removeFolder": "Ordner entfernen",
+  "removeFolderHint": "Den Ordner aus dem Wissensgraph abmelden – die Dateien darin bleiben",
+  "removeFolderAsk": "„{name}“ aus dem Wissensgraph entfernen?",
+  "removeFolderText": "Der Graph dieses Ordners wird gelöscht. Die Dateien im Ordner bleiben unverändert; du kannst ihn jederzeit wieder hinzufügen.",
+  "folderRemoved": "„{name}“ ist nicht mehr im Wissensgraph",
+  "buildStopped": "Warten beendet – der Bau läuft im Hintergrund weiter und erscheint, sobald er fertig ist.",
+  "buildTimeout": "Der Bau ist nach 8 Minuten nicht fertig geworden – vielleicht gibt es den Ordner nicht mehr. Die Aufträge in Hostwerk zeigen den Grund.",
+  "hideQuestion": "Ausblenden",
+  "clearHistory": "Verlauf leeren",
+  "historyCleared": "Verlauf geleert",
+  "forgetAllAsk": "Wirklich alles vergessen – in allen {n} Projekten?",
+  "forgetAllClaude": "Die Anbindung an Claude (markierte Abschnitte in CLAUDE.md/AGENTS.md, Skill) wird überall entfernt"
 }

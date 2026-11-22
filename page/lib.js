@@ -150,6 +150,17 @@
     return pos;
   }
 
-  const api = { markdown, color, palette, hexToHsl, layout, radial, search, ago, esc, KIND_SHAPE, PALETTE };
+  /** Ausgeblendeter Verlauf („Zuletzt gefragt“ geleert): Fragen bis hidden.before fallen weg, leere sowieso. */
+  function visibleAsked(list, hidden) {
+    const before = (hidden && hidden.before) || 0;
+    return (list || []).filter((q) => q && String(q.q || '').trim() && !(before && (q.at || 0) <= before));
+  }
+  /** Offene Fragen ohne die ausgeblendeten (einzeln oder beim Leeren) und ohne leere. */
+  function visibleOpen(list, hidden) {
+    const off = new Set((hidden && hidden.open) || []);
+    return (list || []).filter((q) => String(q || '').trim() && !off.has(q));
+  }
+
+  const api = { markdown, color, palette, hexToHsl, layout, radial, search, ago, esc, visibleAsked, visibleOpen, KIND_SHAPE, PALETTE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.KG = api;
 })(typeof window !== 'undefined' ? window : globalThis);

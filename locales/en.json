@@ -13,6 +13,8 @@
   "noProjectsText": "Create a project in Hostwerk or add a folder – an Obsidian vault, for example.",
   "emptyTitle": "No graph for this project yet",
   "emptyText": "Hostwerk reads code, docs and notes and builds the graph from them. It usually takes seconds and runs entirely on your computer.",
+  "graphEmptyTitle": "Nothing to read found",
+  "graphEmptyText": "This folder has no files Hostwerk reads (yet) – code, Markdown docs, notes or SQL. Add some, then update.",
   "findPlaceholder": "Find a class, function or file …",
   "group": "Group",
   "allGroups": "All groups",
@@ -176,5 +178,17 @@
   "view.memory": "Memory",
   "view.obsidian": "Obsidian",
   "view.claude": "Claude",
-  "openGraph": "Open graph"
+  "openGraph": "Open graph",
+  "removeFolder": "Remove folder",
+  "removeFolderHint": "Take the folder out of the knowledge graph – the files in it stay",
+  "removeFolderAsk": "Remove “{name}” from the knowledge graph?",
+  "removeFolderText": "The graph of this folder is deleted. The files in the folder stay as they are; you can add it again at any time.",
+  "folderRemoved": "“{name}” is no longer in the knowledge graph",
+  "buildStopped": "Stopped waiting – the build goes on in the background and shows up once it is done.",
+  "buildTimeout": "The build was not done after 8 minutes – maybe the folder is gone. Hostwerk’s jobs show the reason.",
+  "hideQuestion": "Hide",
+  "clearHistory": "Clear history",
+  "historyCleared": "History cleared",
+  "forgetAllAsk": "Really forget everything – in all {n} projects?",
+  "forgetAllClaude": "The connection to Claude (marked sections in CLAUDE.md/AGENTS.md, skill) is removed everywhere"
 }

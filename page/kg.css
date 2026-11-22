@@ -22,11 +22,12 @@
 .kg-check { display: flex; gap: var(--sp-2); align-items: flex-start; padding: var(--sp-1) 0; }
 .kg-check input { margin-top: 3px; }
 .kg-path { font-family: var(--mono, monospace); font-size: var(--fs-xs); overflow-wrap: anywhere; }
-.kg-areas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
-@media (max-width: 900px) { .kg-areas { grid-template-columns: 1fr; } }
+/* Bereiche nebeneinander nur, wenn je Spalte genug Platz ist (sonst ragten Knöpfe und Auswahlfelder aus den Karten) */
+.kg-areas { display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(var(--sp-8) * 6.5), 1fr)); gap: var(--sp-3); }
 .kg-area { border: 1px dashed var(--line); border-radius: var(--r-lg); padding: var(--sp-2); min-height: calc(var(--sp-8) * 2.5); display: flex; flex-direction: column; gap: var(--sp-1); }
 .kg-area.over { border-color: var(--accent); background: var(--accent-soft); }
-.kg-card { cursor: grab; }
+.kg-card { cursor: grab; flex-wrap: wrap; row-gap: var(--sp-1); }
+.kg-card > .grow { flex-basis: 100%; }
 .kg-card.dragging { opacity: .5; }
 .kg-focusbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); border-radius: var(--r-lg); background: var(--accent-soft); }
 .kg-narrow summary { cursor: pointer; color: var(--text-2); }
@@ -35,7 +36,10 @@
 .kg-m0 { margin: 0; }
 .kg-min0 { min-width: 0; }
 .kg-top { align-items: flex-start; }
-.kg-full { width: 100%; text-align: left; }
+.kg-top .grow { overflow-wrap: anywhere; } /* lange Wörter ohne Leerzeichen (Pfade, Schlüsselnamen) brechen statt überzustehen */
+/* Listeneinträge als Knopf: ohne Browser-Knopfoptik (grauer Kasten), wie die übrigen Listeneinträge */
+.kg-full { width: 100%; text-align: left; background: transparent; color: inherit; font: inherit; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; cursor: pointer; }
+.kg-full:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .kg-auto { width: auto; }
 .kg-bare { padding: 0; border: 0; }
 .kg-indent { padding-left: var(--sp-5); }

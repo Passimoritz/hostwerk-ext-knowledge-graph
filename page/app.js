@@ -14,6 +14,7 @@ let group = '';     // Gruppenfilter
 let listMode = false;
 let focus = null;   // { id, hops } – Fokus-Ansicht: nur die Nachbarschaft eines Knotens
 let building = false;
+let buildStop = false; // „Abbrechen“ beim Bauen: nicht mehr warten (der Auftrag läuft in Hostwerk weiter)
 const cam = { x: 0, y: 0, z: 1 };
 
 const src = () => (st && st.sources.find((s) => s.id === cur)) || null;
@@ -25,6 +26,8 @@ const md = (s) => html`<div class="kg-md">${raw(KG.markdown(s))}</div>`;
 let pal = null;
 const col = (c) => KG.color(c, pal || (pal = KG.palette(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), Hostwerk.theme)));
 const VIEWS = ['graph', 'ask', 'report', 'memory', 'obsidian', 'claude'];
+/** Zu einer Ansicht wechseln: auf der eigenen Seite über Hostwerks Reiter, eingebettet (Reiter in „Projekte“) über die eigene Ansichtswahl. */
+const goTab = (x) => (Hostwerk.embed === 'page' ? Hostwerk.setTab(x).catch(() => show(x)) : show(x));
 /** Fehler in einem Bereich mit „Erneut versuchen“ (statt ewig Skelett). */
 function showError(where, e) {
   if (declined(e)) return;
@@ -45,14 +48,34 @@ function renderHead() {
     <label class="label" for="pick">${t('project')}</label>
     <select class="select" id="pick">${st.sources.map((x) => html`<option value="${x.id}" ${x.id === cur ? raw('selected') : ''}>${x.name}${x.kind === 'folder' ? (x.vault ? ' (Obsidian)' : ` (${t('folder')})`) : ''}</option>`)}</select>
     <button class="btn sm ghost" id="addFolder">${t('addFolder')}</button>
+    ${s && s.kind === 'folder' ? html`<button class="btn sm ghost" id="removeFolder" title="${t('removeFolderHint')}">${t('removeFolder')}</button>` : ''}
     ${Hostwerk.embed === 'section' ? html`<button class="btn sm ghost" id="openGraph">${t('openGraph')}</button>` : ''}
     ${s ?html`<span class="small muted">${s.built ? t('builtAgo', { when: KG.ago(s.builtAt, lang()) }) : t('notBuilt')}</span>
-      <div class="right row-tight">${st.paused ? html`<span class="badge warn">${t('paused')}</span>` : ''}<button class="btn sm ${s.built ? 'ghost' : 'primary'}" id="build" ${building ? raw('disabled') : ''}>${building ? t('building') : s.built ? t('update') : t('build')}</button></div>` : ''}`);
+      <div class="right row-tight">${st.paused ? html`<span class="badge warn">${t('paused')}</span>` : ''}<button class="btn sm ${s.built ? 'ghost' : 'primary'}" id="build" ${building ? raw('disabled') : ''}>${building ? t('building') : s.built ? t('update') : t('build')}</button>${building ? html`<button class="btn sm ghost" id="buildStop">${t('cancel')}</button>` : ''}</div>` : ''}
+    <div id="removeAsk" class="kg-full"></div>`);
   const pick = $('pick');
-  if (pick) pick.onchange = () => { cur = pick.value; sel = null; view = null; focus = null; Hostwerk.storage.set('project', cur).catch(() => {}); renderHead(); show(tab); };
+  if (pick) pick.onchange = () => { cur = pick.value; sel = null; view = null; focus = null; group = ''; Hostwerk.storage.set('project', cur).catch(() => {}); renderHead(); show(tab); };
   $('addFolder').onclick = addFolder;
   if ($('openGraph')) $('openGraph').onclick = () => Hostwerk.navigate('/ext/knowledge-graph').catch(fail);
   if ($('build')) $('build').onclick = () => build(false);
+  if ($('buildStop')) $('buildStop').onclick = () => { buildStop = true; };
+  if ($('removeFolder')) $('removeFolder').onclick = askRemoveFolder;
+}
+/** Eigenen Ordner wieder abmelden – mit Rückfrage in der Seite (Dateien im Ordner bleiben, nur der Graph dazu geht). */
+function askRemoveFolder() {
+  const s = src(); if (!s || s.kind !== 'folder') return;
+  Hostwerk.render('#removeAsk', html`<div class="callout warn" role="alert"><div class="grow"><b class="callout-title">${t('removeFolderAsk', { name: s.name })}</b><span class="small">${t('removeFolderText')}</span></div>
+    <button class="btn sm" id="rmNo">${t('cancel')}</button><button class="btn sm danger" id="rmYes">${t('removeFolder')}</button></div>`);
+  $('rmNo').onclick = () => Hostwerk.render('#removeAsk', html``);
+  $('rmYes').onclick = async () => {
+    try {
+      await Hostwerk.del(`/knowledge/folders/${enc(s.id)}`);
+      Hostwerk.toast(t('folderRemoved', { name: s.name }), { kind: 'success' });
+      cur = null; sel = null; view = null; focus = null; group = '';
+      Hostwerk.storage.set('project', '').catch(() => {});
+      await loadStatus(); show(tab);
+    } catch (e) { fail(e); }
+  };
 }
 async function addFolder() {
   try {
@@ -64,19 +87,25 @@ async function addFolder() {
 }
 async function build(full) {
   const s = src(); if (!s || building) return;
-  building = true; renderHead();
+  building = true; buildStop = false; renderHead();
   const before = s.builtAt;
   try {
     await Hostwerk.post(`/knowledge/${enc(s.id)}/build`, { full: !!full });
-    for (let i = 0; i < 600; i++) {
+    // Warten, bis der Graph neu ist – höchstens 8 Minuten, „Abbrechen“ hört sofort auf zu warten
+    let done = false;
+    for (let i = 0; i < 600 && !buildStop; i++) {
       await new Promise((r) => setTimeout(r, 800));
       const n = await Hostwerk.get('/knowledge');
       const x = n.sources.find((y) => y.id === s.id);
-      if (x && x.builtAt && x.builtAt !== before) { st = n; break; }
+      if (x && x.builtAt && x.builtAt !== before) { st = n; done = true; break; }
     }
-    view = null; Hostwerk.toast(t('built'), { kind: 'success' });
+    view = null;
+    if (done) Hostwerk.toast(t('built'), { kind: 'success' });
+    else if (buildStop) Hostwerk.toast(t('buildStopped'), { kind: 'info' });
+    // Nicht fertig geworden (z. B. Ordner gibt es nicht mehr): sagen statt „fertig“ zu melden
+    else Hostwerk.toast(t('buildTimeout'), { kind: 'error' });
   } catch (e) { fail(e); }
-  building = false; await loadStatus(); show(tab);
+  building = false; buildStop = false; await loadStatus(); show(tab);
 }
 
 /* ---------------- Graph ---------------- */
@@ -90,6 +119,7 @@ async function renderGraph() {
     if (view.focus) { cam.x = 0; cam.y = 0; cam.z = 1; sel = view.focus.id; }
   }
   const v = view;
+  if (!v.focus && !v.total.nodes && group === '') { Hostwerk.render('#graph', html`<div class="card"><div class="empty"><h3>${t('graphEmptyTitle')}</h3><p>${t('graphEmptyText')}</p><div class="empty-action"><button class="btn" id="e-build">${t('update')}</button></div></div></div>`); $('e-build').onclick = () => build(false); return; }
   Hostwerk.render('#graph', html`
     ${v.focus ? html`<div class="kg-focusbar" role="status">
       <span class="badge accent">${t('focus')}</span><b class="ellipsis kg-min0">${v.focus.label}</b>
@@ -117,7 +147,7 @@ async function renderGraph() {
   $('m-list').onclick = () => { listMode = true; renderGraph(); };
   const find = $('find');
   find.onkeydown = async (e) => {
-    if (e.key !== 'Enter') return;
+    if (e.key !== 'Enter' || !find.value.trim()) return;
     const hit = KG.search(v.nodes, find.value, 1)[0];
     if (hit) return select(hit.id, true);
     // Nicht unter den gezeichneten Knoten (großes Projekt)? Den Graphen fragen und auf den Treffer fokussieren.
@@ -148,8 +178,8 @@ async function renderSide() {
     Hostwerk.render(side, html`${md(r.text)}
       <div class="row-tight kg-wrap-row"><button class="btn sm primary" id="s-focus" ${view.focus && view.focus.id === n.id ? raw('disabled') : ''}>${t('focusOn')}</button><button class="btn sm" id="s-ask">${t('askAbout')}</button><button class="btn sm ghost" id="s-from">${t('pathFrom')}</button><button class="btn sm ghost" id="s-close">${t('close')}</button></div>`);
     $('s-focus').onclick = () => setFocus(n.id);
-    $('s-ask').onclick = () => { pending.question = n.label; Hostwerk.setTab('ask'); };
-    $('s-from').onclick = () => { pending.from = n.label; Hostwerk.setTab('ask'); };
+    $('s-ask').onclick = () => { pending.question = n.label; goTab('ask'); };
+    $('s-from').onclick = () => { pending.from = n.label; goTab('ask'); };
     $('s-close').onclick = () => { sel = null; draw(); renderSide(); };
   } catch (e) { Hostwerk.render(side, html`<p class="c-err small">${e.message}</p>`); }
 }
@@ -166,12 +196,13 @@ function select(id, center) {
 }
 
 // Zeichnen
-let cv = null; let ctx = null; let hover = null;
+let cv = null; let ctx = null; let hover = null; let ro = null;
 function drawSetup() {
   cv = $('cv'); if (!cv) return;
   ctx = cv.getContext('2d');
   const resize = () => { const r = cv.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1; cv.width = Math.max(10, r.width * dpr); cv.height = Math.max(10, r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw(); };
-  new ResizeObserver(resize).observe(cv);
+  if (ro) ro.disconnect();
+  ro = new ResizeObserver(resize); ro.observe(cv);
   let drag = null;
   cv.onpointerdown = (e) => { drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false }; cv.setPointerCapture(e.pointerId); };
   cv.onpointermove = (e) => {
@@ -225,6 +256,7 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
   }
   ctx.setLineDash([]);
+  const labels = [];
   const top = new Set(view.nodes.slice().sort((a, b) => b.d - a.d).slice(0, Math.round(18 * Math.min(cam.z, 3))).map((n) => n.id));
   for (const n of view.nodes) {
     const p = pos.get(n.id); if (!p) continue;
@@ -240,10 +272,18 @@ function draw() {
     else ctx.arc(x, y, rad, 0, Math.PI * 2);
     ctx.fill();
     if (n.id === sel || n.id === hover) { ctx.strokeStyle = text; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1; }
-    if ((top.has(n.id) && !dim) || n.id === sel || n.id === hover || (sel && near.has(n.id) && cam.z > 1.4)) {
-      ctx.globalAlpha = dim ? 0.3 : 1; ctx.fillStyle = text; ctx.font = `${n.id === sel ? 600 : 400} 12px system-ui, sans-serif`;
-      ctx.fillText(n.label.length > 34 ? `${n.label.slice(0, 32)}…` : n.label, x + rad + 4, y + 4);
-    }
+    if ((top.has(n.id) && !dim) || n.id === sel || n.id === hover || (sel && near.has(n.id) && cam.z > 1.4)) labels.push({ n, x: x + rad + 4, y: y + 4, dim, pri: n.id === sel ? 3 : n.id === hover ? 2 : near.has(n.id) ? 1 : 0 });
+  }
+  // Beschriftungen zuletzt: Gewählter/Hover zuerst, dann nach Verbindungen; was eine schon gezeichnete überdeckt, entfällt
+  const placed = [];
+  labels.sort((a, b) => b.pri - a.pri || (b.n.d || 0) - (a.n.d || 0));
+  for (const l of labels) {
+    const s = l.n.label.length > 34 ? `${l.n.label.slice(0, 32)}…` : l.n.label;
+    ctx.font = `${l.n.id === sel ? 600 : 400} 12px system-ui, sans-serif`;
+    const box = { x: l.x, y: l.y - 11, w: ctx.measureText(s).width, h: 14 };
+    if (l.pri < 2 && placed.some((p) => box.x < p.x + p.w && p.x < box.x + box.w && box.y < p.y + p.h && p.y < box.y + box.h)) continue;
+    placed.push(box);
+    ctx.globalAlpha = l.dim ? 0.3 : 1; ctx.fillStyle = text; ctx.fillText(s, l.x, l.y);
   }
   ctx.globalAlpha = 1;
 }
@@ -292,17 +332,27 @@ async function renderAsk() {
   $('ego').onclick = () => { const n = $('en').value.trim(); if (n) answer(Hostwerk.post(`/knowledge/${enc(s.id)}/explain`, { name: n })); };
   loadHistory();
 }
+/**
+ * „Zuletzt gefragt“ leeren: Hostwerk bietet (noch) kein Löschen des Fragenverlaufs an – die Seite merkt sich je Projekt,
+ * was ausgeblendet ist (alles bis zu einem Zeitpunkt bzw. einzelne offene Fragen), in ihrem eigenen Speicher.
+ */
+async function hiddenHistory(id) { try { return (await Hostwerk.storage.get(`hidden:${id}`)) || {}; } catch { return {}; } }
+async function hideHistory(id, patch) { const h = await hiddenHistory(id); const next = { before: patch.before || h.before || 0, open: [...new Set([...(h.open || []), ...(patch.open || [])])].slice(-200) }; await Hostwerk.storage.set(`hidden:${id}`, next).catch(() => {}); }
 async function loadHistory() {
   const s = src(); if (!s || !$('history')) return;
   try {
     const h = await Hostwerk.get(`/knowledge/${enc(s.id)}/questions`);
+    const hid = await hiddenHistory(s.id);
+    h.unanswered = KG.visibleOpen(h.unanswered, hid); h.questions = KG.visibleAsked(h.questions, hid);
     Hostwerk.render('#history', html`
       ${h.unanswered.length ? html`<h3 class="kg-m0">${t('openQuestions')}</h3><p class="small muted kg-m0">${t('openQuestionsHint')}</p>
-        ${h.unanswered.map((q) => html`<div class="list-item"><span class="grow">${q}</span><button class="btn xs ghost" data-remember="${q}">${t('remember')}</button></div>`)}` : ''}
-      <h3 class="kg-m0">${t('history')}</h3>
+        ${h.unanswered.map((q) => html`<div class="list-item"><span class="grow">${q}</span><button class="btn xs ghost" data-remember="${q}">${t('remember')}</button><button class="btn xs ghost icon" data-hideq="${q}" title="${t('hideQuestion')}" aria-label="${t('hideQuestion')}">×</button></div>`)}` : ''}
+      <div class="row-tight"><h3 class="kg-m0 grow">${t('history')}</h3>${h.questions.length || h.unanswered.length ? html`<button class="btn xs ghost" id="hclear">${t('clearHistory')}</button>` : ''}</div>
       ${h.questions.length ? html`<div class="kg-scroll">${h.questions.slice(0, 40).map((q) => html`<button class="list-item kg-full" data-again="${q.q}"><span class="grow ellipsis">${q.q}</span><span class="badge ${q.status === 'ok' ? 'ok' : 'warn'}">${q.client || ''}</span><span class="tiny muted">${KG.ago(q.at, lang())}</span></button>`)}</div>` : html`<p class="muted small">${t('noHistory')}</p>`}`);
     for (const b of document.querySelectorAll('[data-again]')) b.onclick = () => { $('q').value = b.dataset.again; $('go').click(); };
-    for (const b of document.querySelectorAll('[data-remember]')) b.onclick = () => { pending.memo = b.dataset.remember; Hostwerk.setTab('memory'); };
+    for (const b of document.querySelectorAll('[data-remember]')) b.onclick = () => { pending.memo = b.dataset.remember; goTab('memory'); };
+    for (const b of document.querySelectorAll('[data-hideq]')) b.onclick = async () => { await hideHistory(s.id, { open: [b.dataset.hideq] }); loadHistory(); };
+    if ($('hclear')) $('hclear').onclick = async () => { await hideHistory(s.id, { before: Date.now(), open: h.unanswered }); Hostwerk.toast(t('historyCleared'), { kind: 'success' }); loadHistory(); };
   } catch { /* egal */ }
 }
 
@@ -313,14 +363,13 @@ async function renderReport() {
     const r = await Hostwerk.get(`/knowledge/${enc(s.id)}/report`);
     Hostwerk.render('#report', html`<div class="card card-pad"><div class="row kg-mb-2"><span class="grow small muted">${t('reportHint')}</span><button class="btn sm ghost" id="copy">${t('copy')}</button></div>${md(r.md)}</div>`);
     $('copy').onclick = () => Hostwerk.copy(r.md).then(() => Hostwerk.toast(t('copied'), { kind: 'success' }));
-  } catch (e) { fail(e); }
+  } catch (e) { showError('#report', e); }
 }
 
 /* ---------------- Gedächtnis ---------------- */
 async function renderMemory() {
   const s = src(); if (!s) return Hostwerk.render('#memory', html`<p class="muted">${t('noProjects')}</p>`);
-  let list = [];
-  try { list = await Hostwerk.get(`/knowledge/${enc(s.id)}/memory`); } catch (e) { fail(e); }
+  const list = await Hostwerk.get(`/knowledge/${enc(s.id)}/memory`); // Fehler → „Erneut versuchen“ (nicht „Noch nichts gemerkt“)
   const review = list.filter((m) => !m.confirmed);
   const SRC = { user: t('src.user'), claude: 'Claude', hostwerk: 'Hostwerk' };
   const CATS = ['wissen', 'regel', 'vorliebe', 'ziel', 'datei', 'pruefen', 'idee'];
@@ -352,7 +401,7 @@ async function renderMemory() {
       </div>
       <div class="card card-pad stack" id="memform"></div>
     </div>`);
-  const move = async (mid, body) => { try { await Hostwerk.put(`/knowledge/${enc(s.id)}/memory/${enc(mid)}`, body); renderMemory(); } catch (e) { fail(e); } };
+  const move = async (mid, body) => { try { await Hostwerk.put(`/knowledge/${enc(s.id)}/memory/${enc(mid)}`, body); await renderMemory(); } catch (e) { fail(e); } };
   for (const el of document.querySelectorAll('[data-drag]')) el.ondragstart = (e) => { e.dataTransfer.setData('text/plain', el.dataset.drag); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); };
   for (const el of document.querySelectorAll('[data-drag]')) el.ondragend = () => el.classList.remove('dragging');
   for (const z of document.querySelectorAll('[data-drop]')) {
@@ -363,8 +412,8 @@ async function renderMemory() {
   for (const sel of document.querySelectorAll('[data-area]')) sel.onchange = () => move(sel.dataset.area, { area: sel.value });
   for (const sel of document.querySelectorAll('[data-cat]')) sel.onchange = () => move(sel.dataset.cat, { cat: sel.value });
   memForm(null);
-  for (const b of document.querySelectorAll('[data-ok]')) b.onclick = async () => { try { await Hostwerk.put(`/knowledge/${enc(s.id)}/memory/${enc(b.dataset.ok)}`, { confirmed: true }); renderMemory(); } catch (e) { fail(e); } };
-  for (const b of document.querySelectorAll('[data-del]')) b.onclick = async () => { try { await Hostwerk.del(`/knowledge/${enc(s.id)}/memory/${enc(b.dataset.del)}`); renderMemory(); } catch (e) { fail(e); } };
+  for (const b of document.querySelectorAll('[data-ok]')) b.onclick = async () => { try { await Hostwerk.put(`/knowledge/${enc(s.id)}/memory/${enc(b.dataset.ok)}`, { confirmed: true }); await renderMemory(); } catch (e) { fail(e); } };
+  for (const b of document.querySelectorAll('[data-del]')) b.onclick = async () => { try { await Hostwerk.del(`/knowledge/${enc(s.id)}/memory/${enc(b.dataset.del)}`); await renderMemory(); } catch (e) { fail(e); } };
   for (const b of document.querySelectorAll('[data-edit]')) b.onclick = () => memForm(list.find((m) => m.id === b.dataset.edit));
 }
 function memForm(m) {
@@ -380,7 +429,7 @@ function memForm(m) {
   $('msave').onclick = async () => {
     const body = { text: $('mt').value.trim(), detail: $('md').value.trim(), links: $('ml').value.split(',').map((x) => x.trim()).filter(Boolean) };
     if (!body.text) return;
-    try { if (m) await Hostwerk.put(`/knowledge/${enc(s.id)}/memory/${enc(m.id)}`, body); else await Hostwerk.post(`/knowledge/${enc(s.id)}/memory`, body); Hostwerk.toast(t('saved'), { kind: 'success' }); renderMemory(); } catch (e) { fail(e); }
+    try { if (m) await Hostwerk.put(`/knowledge/${enc(s.id)}/memory/${enc(m.id)}`, body); else await Hostwerk.post(`/knowledge/${enc(s.id)}/memory`, body); Hostwerk.toast(t('saved'), { kind: 'success' }); await renderMemory(); } catch (e) { fail(e); }
   };
 }
 
@@ -444,8 +493,7 @@ async function renderObsidian() {
 /* ---------------- Claude ---------------- */
 async function renderClaude() {
   const s = src(); if (!s) return Hostwerk.render('#claude', html`<p class="muted">${t('noProjects')}</p>`);
-  let c = { connected: false, items: [], issues: [] };
-  try { c = await Hostwerk.get(`/knowledge/${enc(s.id)}/claude`); } catch (e) { fail(e); }
+  const c = await Hostwerk.get(`/knowledge/${enc(s.id)}/claude`); // Fehler → „Erneut versuchen“ (nicht fälschlich „Nicht eingebunden“)
   const has = (name) => c.items.some((x) => x.path.endsWith(name));
   Hostwerk.render('#claude', html`
     ${!st.mcp.connected ? html`<div class="callout warn kg-mb-4"><div class="callout-body"><b class="callout-title">${t('mcpOff')}</b>${t('mcpOffText')}</div><button class="btn sm" id="tomcp">${t('mcpConnect')}</button></div>` : ''}
@@ -473,6 +521,7 @@ async function renderClaude() {
           <label class="kg-check"><input type="checkbox" id="fmem"><span>${t('forgetMemory')}</span></label>
           <label class="kg-check"><input type="checkbox" id="fobs"><span>${t('forgetObsidian')}</span></label>
           <div class="row"><button class="btn ghost danger" id="fall">${t('forgetAll')}</button><span class="grow"></span><button class="btn danger" id="fone">${t('forgetProject')}</button></div>
+          <div id="fask"></div>
           <div id="fres"></div>
         </div>
         <div class="card card-pad stack">
@@ -482,8 +531,8 @@ async function renderClaude() {
       </div>
     </div>`);
   if ($('tomcp')) $('tomcp').onclick = () => Hostwerk.navigate('/claude');
-  $('ccon').onclick = async () => { try { await Hostwerk.post(`/knowledge/${enc(s.id)}/claude/connect`, { claudeMd: $('cmd').checked, agentsMd: $('cag').checked, skill: $('csk').checked }); Hostwerk.toast(t('connectedToast'), { kind: 'success' }); await loadStatus(); renderClaude(); } catch (e) { fail(e); } };
-  if ($('crep')) $('crep').onclick = async () => { try { await Hostwerk.post(`/knowledge/${enc(s.id)}/claude/repair`, {}); renderClaude(); } catch (e) { fail(e); } };
+  $('ccon').onclick = async () => { try { await Hostwerk.post(`/knowledge/${enc(s.id)}/claude/connect`, { claudeMd: $('cmd').checked, agentsMd: $('cag').checked, skill: $('csk').checked }); Hostwerk.toast(t('connectedToast'), { kind: 'success' }); await loadStatus(); await renderClaude(); } catch (e) { fail(e); } };
+  if ($('crep')) $('crep').onclick = async () => { try { await Hostwerk.post(`/knowledge/${enc(s.id)}/claude/repair`, {}); await renderClaude(); } catch (e) { fail(e); } };
   $('pz').onchange = async (e) => { try { await Hostwerk.put('/knowledge', { paused: e.target.checked }); await loadStatus(); } catch (er) { fail(er); e.target.checked = !e.target.checked; } };
   const opts = () => ({ data: $('fdata').checked, memory: $('fmem').checked, obsidian: $('fobs').checked });
   const done = (r) => {
@@ -492,7 +541,16 @@ async function renderClaude() {
       ${r.kept.map((k) => html`<div class="tiny mono">${k.path} – ${k.why}</div>`)}${r.verify.left.map((p) => html`<div class="tiny mono">${p}</div>`)}</div></div>`);
   };
   $('fone').onclick = async () => { try { const r = await Hostwerk.post(`/knowledge/${enc(s.id)}/claude/forget`, opts()); done(r); view = null; await loadStatus(); } catch (e) { fail(e); } };
-  $('fall').onclick = async () => { try { const r = await Hostwerk.post('/knowledge/forget-all', opts()); done(r); view = null; await loadStatus(); } catch (e) { fail(e); } };
+  // „Alles vergessen“ betrifft alle Projekte – erst in der Seite nachfragen, was genau weg ist
+  $('fall').onclick = () => {
+    const o = opts();
+    const what = [o.data && t('forgetData'), o.memory && t('forgetMemory'), o.obsidian && t('forgetObsidian')].filter(Boolean);
+    Hostwerk.render('#fask', html`<div class="callout err" role="alert"><div class="grow"><b class="callout-title">${t('forgetAllAsk', { n: st.sources.length })}</b>
+      <ul class="small kg-m0 kg-indent"><li>${t('forgetAllClaude')}</li>${what.map((w) => html`<li>${w}</li>`)}</ul></div>
+      <div class="row-tight"><button class="btn sm" id="faNo">${t('cancel')}</button><button class="btn sm danger" id="faYes">${t('forgetAll')}</button></div></div>`);
+    $('faNo').onclick = () => Hostwerk.render('#fask', html``);
+    $('faYes').onclick = async () => { Hostwerk.render('#fask', html``); try { const r = await Hostwerk.post('/knowledge/forget-all', o); done(r); view = null; await loadStatus(); } catch (e) { fail(e); } };
+  };
 }
 
 /* ---------------- Reiter ---------------- */

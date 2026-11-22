@@ -75,3 +75,17 @@ test('Gruppenfarben folgen Akzent und Hell/Dunkel', () => {
   assert.strictEqual(KG.color(-1, dark), dark.none);
   assert.strictEqual(KG.color(3), KG.PALETTE[3]); // ohne Palette: Rückfall
 });
+
+test('Verlauf leeren: alles bis zum Zeitpunkt und einzelne offene Fragen ausgeblendet, Neues bleibt sichtbar', () => {
+  const asked = [{ q: 'alt', at: 100 }, { q: '  ', at: 300 }, { q: 'neu', at: 500 }];
+  assert.deepStrictEqual(KG.visibleAsked(asked, {}).map((x) => x.q), ['alt', 'neu']);
+  assert.deepStrictEqual(KG.visibleAsked(asked, { before: 200 }).map((x) => x.q), ['neu']);
+  assert.deepStrictEqual(KG.visibleAsked(asked, null).length, 2);
+  assert.deepStrictEqual(KG.visibleOpen(['a', '', 'b', 'c'], { open: ['b'] }), ['a', 'c']);
+  assert.deepStrictEqual(KG.visibleOpen(['a'], undefined), ['a']);
+});
+
+test('neue Texte in Deutsch und Englisch', () => {
+  const de = require('../locales/de.json'); const en = require('../locales/en.json');
+  for (const k of ['removeFolder', 'removeFolderHint', 'removeFolderAsk', 'removeFolderText', 'folderRemoved', 'buildStopped', 'buildTimeout', 'hideQuestion', 'clearHistory', 'historyCleared', 'forgetAllAsk', 'forgetAllClaude']) { assert.ok(de[k], `de ${k}`); assert.ok(en[k], `en ${k}`); }
+});
